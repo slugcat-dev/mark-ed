@@ -1,0 +1,26 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	display: flex;
+	flex-direction: row;
+	min-height: 100vh;
+	gap: 1rem;
+	padding: 1rem;
+
+	#editor,
+	#preview {
+		display: block;
+		width: 50%;
+	}
+
+	#editor {
+		font-family: monospace;
+		font-size: .875rem;
+	}
+
+	#preview {
+		font-family: sans-serif;
+	}
+}
