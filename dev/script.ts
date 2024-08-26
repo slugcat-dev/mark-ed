@@ -1,5 +1,6 @@
-import { MarkdownEditor } from '../src/index'
+import { Editor } from '../src/index'
 
-const editor = new MarkdownEditor('editor', 'preview')
-
-editor.setContent('# Hello, World!')
+const editor = new Editor(
+	'editor',
+	'# Editor\nHello, World'
+)
