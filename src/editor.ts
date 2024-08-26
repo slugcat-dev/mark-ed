@@ -1,3 +1,8 @@
+export interface EditorSelection {
+	start: number
+	end: number
+}
+
 export class Editor {
 	private root: HTMLElement
 	private lines: string[] = []
@@ -33,11 +38,13 @@ export class Editor {
 		// Add event listeners
 		// @ts-expect-error This seems to be an error in TypeScript, see
 		// https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event#event_type
-		this.root.addEventListener('input', this.handleInputEvent.bind(this))
-		this.root.addEventListener('compositionend', this.handleInputEvent.bind(this))
+		this.root.addEventListener('input', this.handleInput.bind(this))
+		this.root.addEventListener('compositionend', this.handleInput.bind(this))
+		this.root.addEventListener('keydown', this.handleKey.bind(this))
+		this.root.addEventListener('paste', this.handlePaste.bind(this))
 	}
 
-	private handleInputEvent(event: InputEvent | CompositionEvent): void {
+	private handleInput(event: InputEvent | CompositionEvent): void {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
 		if (event instanceof InputEvent) {
@@ -56,8 +63,27 @@ export class Editor {
 			this.updateLines()
 	}
 
+	private handleKey(event: KeyboardEvent): void {
+		if (event.key === 'Enter') {
+			event.preventDefault()
+			this.insert('\n')
+		} else if (event.key === 'Tab') {
+			event.preventDefault()
+			this.insert('\t')
+		}
+	}
+
+	private handlePaste(event: ClipboardEvent): void {
+		event.preventDefault()
+
+		if (!event.clipboardData)
+			return
+
+    this.insert(event.clipboardData.getData('text/plain'))
+	}
+
 	private updateLines(newParagraph: boolean = false): void {
-		let { start, end } = this.getSelection()
+		let selection = this.getSelection()
 		let currentElm = null
 
 		if (newParagraph) {
@@ -65,40 +91,36 @@ export class Editor {
 
 			if (selection && selection.rangeCount > 0) {
 				const range = selection.getRangeAt(0)
-				const currentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+
+				currentElm = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
 					? range.commonAncestorContainer.parentElement
 					: range.commonAncestorContainer as HTMLElement
-
-				if (currentElement)
-					currentElm = currentElement
 			}
 		}
 
 		this.lines = []
 
 		for (const node of this.root.childNodes) {
-			if (node !== currentElm)
-				this.lines.push(...(node.textContent ?? '').split('\n'))
-			else {
-				const parts = (currentElm.textContent ?? '').split('\n')
+			const parts = (node.textContent ?? '').split('\n')
 
-				this.lines.push(parts[0])
-				this.lines.push(parts[1])
-			}
+			/*if (node === currentElm && parts.length >= 3 &&parts.slice(-2).every(p => p === ''))
+				parts.pop()*/
+
+			this.lines.push(...parts)
 		}
 
-		this.root.innerHTML = ''
-
 		this.updateDOM()
-		this.setSelection(start, end)
+		this.setSelection(selection)
 	}
 
 	private updateDOM(): void {
+		this.root.innerHTML = ''
+
 		for (const line of this.lines) {
 			const lineElm = document.createElement('div')
 
 			lineElm.className = 'md-line'
-			lineElm.textContent = line
+			lineElm.innerHTML = markdown(line)
 
 			if (line.length === 0)
 				lineElm.innerHTML = '<br>'
@@ -107,7 +129,17 @@ export class Editor {
 		}
 	}
 
-	private getSelection(): { start: number, end: number } {
+	insert(text: string): void {
+		const selection = this.getSelection()
+
+		this.content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
+		selection.start = selection.end = selection.start + text.length
+
+
+		this.setSelection(selection)
+	}
+
+	getSelection(): EditorSelection {
 		const selection = document.getSelection()
 
 		if (!selection || selection.rangeCount === 0)
@@ -131,11 +163,7 @@ export class Editor {
 			while (node = walker.nextNode())
 				length += (node as Text).length
 
-			console.log('len', length)
-			console.log(fragment)
-
-			// TODO: what if no len? -1 when mpt
-			return length + fragment.querySelectorAll('div').length - 1
+			return Math.max(0, length + fragment.querySelectorAll('div.md-line').length - 1)
 		}
 
 		return {
@@ -144,34 +172,47 @@ export class Editor {
 		}
 	}
 
-	private setSelection(start: number, end: number): void {
-		console.log(start)
+	setSelection({ start, end }: EditorSelection): void {
 		const selection = document.getSelection()
 
 		if (!selection)
 			return
 
-		const range = document.createRange()
 		let currentLength = 0
 		let startNode: Node | null = null
 		let startOffset = 0
 		let endNode: Node | null = null
 		let endOffset = 0
 
-		for (const lineDiv of this.root.children) {
-			if (!(lineDiv instanceof HTMLDivElement)) continue
+		const findNodeAndOffset = (targetLength: number, lineDiv: Element): [Node, number] => {
+			let currentLength = 0
+			const walker = document.createTreeWalker(lineDiv, NodeFilter.SHOW_TEXT)
 
-			const lineLength = lineDiv.textContent?.length ?? 0
+			let node: Node | null
+			while (node = walker.nextNode()) {
+				const nodeLength = (node as Text).length
+				if (currentLength + nodeLength >= targetLength) {
+					return [node, targetLength - currentLength]
+				}
+				currentLength += nodeLength
+			}
+
+			return [lineDiv, 0]
+		}
+
+		for (const lineDiv of this.root.children) {
+			if (!lineDiv.matches('div.md-line'))
+				continue
+
 			const isEmptyLine = lineDiv.firstChild instanceof HTMLBRElement
+			const lineLength = lineDiv.textContent?.length ?? 0
 
 			if (!startNode && currentLength + lineLength >= start) {
-				startNode = isEmptyLine ? lineDiv : lineDiv.firstChild
-				startOffset = isEmptyLine ? 0 : start - currentLength
+				[startNode, startOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(start - currentLength, lineDiv)
 			}
 
 			if (!endNode && currentLength + lineLength >= end) {
-				endNode = isEmptyLine ? lineDiv : lineDiv.firstChild
-				endOffset = isEmptyLine ? 0 : end - currentLength
+				[endNode, endOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(end - currentLength, lineDiv)
 				break
 			}
 
@@ -179,6 +220,8 @@ export class Editor {
 		}
 
 		if (startNode && endNode) {
+			const range = document.createRange()
+
 			range.setStart(startNode, startOffset)
 			range.setEnd(endNode, endOffset)
 			selection.removeAllRanges()
@@ -192,8 +235,73 @@ export class Editor {
 
 	// TODO
 	set content(content: string) {
+		const selection = this.getSelection()
+
 		this.lines = content.split('\n')
+		selection.start = selection.end = selection.start + content.length
 
 		this.updateDOM()
+
+		if (this.root.matches(':focus'))
+			this.setSelection(selection)
 	}
+}
+
+function escapeHTMLEncode(str: string) {
+  var div = document.createElement('div');
+  var text = document.createTextNode(str);
+  div.appendChild(text);
+  return div.innerHTML;
+ }
+
+function markdown(text: string) {
+	text = escapeHTMLEncode(text)
+
+	const tokens = []
+
+	// Headings
+	tokens.push([...text.matchAll(/^(?<formatting>#)(?<text>\s.*$)/gim)])
+
+	// Highlight
+	tokens.push([...text.matchAll(/^(?<formatting>!!)(?<text>\s.*$)/gim)])
+
+	// Bold, Italic
+	tokens.push([...text.matchAll(/(?<formatting>\*{1,3})(?<text>[^\*]*?[^\*])\1/gim)])
+	tokens.push([...text.matchAll(/(?<formatting>_{1,3})(?<text>[^_]*?[^_])\1/gim)])
+
+	// Inline code
+	tokens.push([...text.matchAll(/(?<formatting>`)(?<text>[^`]*?[^`])\1/gim)])
+
+	for (const token of tokens.flatMap(t => t)) {
+		const symbol = `<span class="md-mark">${token.groups.formatting}</span>`
+		const md = (() => {
+			switch (token.groups.formatting) {
+				// Headings
+				case '#': return `<h1>${symbol}${token.groups.text}</h1>`
+
+				// Highlight
+				case '!!': return `<b style="color: #f80">${symbol}${token.groups.text}</b>`
+
+				// Italic
+				case '*':
+				case '_': return `<i>${symbol}${token.groups.text}${symbol}</i>`
+
+				// Bold
+				case '**':
+				case '__': return `<b>${symbol}${token.groups.text}${symbol}</b>`
+
+				// Bold + Italic
+				case '***':
+				case '___': return `<b><i>${symbol}${token.groups.text}${symbol}</i></b>`
+
+				// Inline code
+				case '`': return `<code>${symbol}${token.groups.text}${symbol}</code>`
+				default: return token[0]
+			}
+		})()
+
+		text = text.replace(token[0], md)
+	}
+
+	return text
 }

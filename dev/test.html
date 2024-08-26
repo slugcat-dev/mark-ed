@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>mark-ed</title>
+	</head>
+	<body>
+		<div id="editor" contenteditable="true"></div>
+	</body>
+	<script>
+		const editor = document.getElementById('editor')
+
+		editor.addEventListener('input', (event) => {
+			console.log('InputEvent')
+			console.log(event.target.textContent.replaceAll('\n', '*'))
+
+			for (const node of event.target.childNodes)
+				console.log((node.textContent ?? '').split('\n'))
+		})
+	</script>
+</html>
