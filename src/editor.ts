@@ -1,13 +1,11 @@
-export interface EditorSelection {
-	start: number
-	end: number
-}
+import { EditorState } from './state'
+import type { EditorSelection } from './types'
 
 export class Editor {
-	private root: HTMLElement
-	private lines: string[] = []
+	readonly root: HTMLElement
+	readonly state = new EditorState()
 
-	constructor(root: HTMLElement | string, content?: string) {
+	constructor(root: HTMLElement | string | null, content?: string) {
 		const element = typeof root === 'string'
 			? document.getElementById(root)
 			: root
@@ -18,10 +16,9 @@ export class Editor {
 		this.root = element
 
 		this.createEditorElement()
-		this.updateLines()
 
 		if (content)
-			this.content = content
+			this.state.content = content
 	}
 
 	private createEditorElement(): void {
@@ -35,41 +32,50 @@ export class Editor {
 		// @ts-expect-error
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
 
+		// Clear the DOM
+		this.root.innerHTML = '<div class="md-line"><br></div>'
+
 		// Add event listeners
-		// @ts-expect-error This seems to be an error in TypeScript, see
-		// https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event#event_type
 		this.root.addEventListener('input', this.handleInput.bind(this))
 		this.root.addEventListener('compositionend', this.handleInput.bind(this))
 		this.root.addEventListener('keydown', this.handleKey.bind(this))
 		this.root.addEventListener('paste', this.handlePaste.bind(this))
+		this.state.addEventListener('contentchange', this.handleContentUpdate.bind(this))
+		document.addEventListener('selectionchange', this.handleSelectionChange.bind(this))
 	}
 
-	private handleInput(event: InputEvent | CompositionEvent): void {
+	get focused(): boolean {
+		return this.root === document.activeElement
+	}
+
+	private handleSelectionChange(e: Event) {
+		this.state.selection = this.getSelection()
+
+		console.log(this.state.selection)
+	}
+
+	private handleContentUpdate() {
+		this.updateDOM()
+		// TODO: cursor at end
+	}
+
+	private handleInput(event: Event): void {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
-		if (event instanceof InputEvent) {
-			if (event.inputType === 'insertCompositionText')
-				return
+		if (event instanceof InputEvent && event.isComposing)
+			return
 
-			if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak')
-				this.updateLines(true)
-			else {
-				 if (!this.root.firstChild)
-					this.root.innerHTML = '<div class="md-line"><br></div>'
-
-				 this.updateLines()
-			}
-		} else
-			this.updateLines()
+		this.updateLines()
 	}
 
+	// TODO: keymap handler
 	private handleKey(event: KeyboardEvent): void {
 		if (event.key === 'Enter') {
 			event.preventDefault()
-			this.insert('\n')
+			this.insertAtSelection('\n')
 		} else if (event.key === 'Tab') {
 			event.preventDefault()
-			this.insert('\t')
+			this.insertAtSelection('\t')
 		}
 	}
 
@@ -79,44 +85,33 @@ export class Editor {
 		if (!event.clipboardData)
 			return
 
-    this.insert(event.clipboardData.getData('text/plain'))
+		this.insertAtSelection(event.clipboardData.getData('text/plain'))
 	}
 
-	private updateLines(newParagraph: boolean = false): void {
-		let selection = this.getSelection()
-		let currentElm = null
+	// TODO: rn, state
+	private updateLines(): void {
+		this.state.clearLines()
+		let lines: string[] = []
 
-		if (newParagraph) {
-			const selection = window.getSelection()
+		if (!this.root.firstChild) {
+			this.root.innerHTML = '<div class="md-line"><br></div>'
 
-			if (selection && selection.rangeCount > 0) {
-				const range = selection.getRangeAt(0)
-
-				currentElm = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
-					? range.commonAncestorContainer.parentElement
-					: range.commonAncestorContainer as HTMLElement
-			}
+			return
 		}
 
-		this.lines = []
+		for (const node of this.root.childNodes)
+			lines.push(...(node.textContent ?? '').split('\n'))
 
-		for (const node of this.root.childNodes) {
-			const parts = (node.textContent ?? '').split('\n')
-
-			/*if (node === currentElm && parts.length >= 3 &&parts.slice(-2).every(p => p === ''))
-				parts.pop()*/
-
-			this.lines.push(...parts)
-		}
-
-		this.updateDOM()
-		this.setSelection(selection)
+		this.state.content = lines.join('\n')
 	}
 
 	private updateDOM(): void {
+		const selection = this.getSelection()
+
 		this.root.innerHTML = ''
 
-		for (const line of this.lines) {
+		// TODO: state, smart upd
+		for (const line of this.state.lines) {
 			const lineElm = document.createElement('div')
 
 			lineElm.className = 'md-line'
@@ -127,14 +122,16 @@ export class Editor {
 
 			this.root.appendChild(lineElm)
 		}
+
+		this.setSelection(selection)
 	}
 
-	insert(text: string): void {
+	// TODO: rev, state
+	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
 
-		this.content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
+		this.state.content = this.state.content.slice(0, selection.start) + text + this.state.content.slice(selection.end)
 		selection.start = selection.end = selection.start + text.length
-
 
 		this.setSelection(selection)
 	}
@@ -154,22 +151,25 @@ export class Editor {
 		toEndRange.selectNodeContents(this.root)
 		toEndRange.setEnd(range.endContainer, range.endOffset)
 
-		const getRangeLength = (range: Range) => {
+		function getRangeLength(range: Range): number {
 			const fragment = range.cloneContents()
+			const lines = fragment.querySelectorAll('div.md-line').length
 			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
-			let length = 0
 			let node
+			let length = 0
 
 			while (node = walker.nextNode())
 				length += (node as Text).length
 
-			return Math.max(0, length + fragment.querySelectorAll('div.md-line').length - 1)
+			return Math.max(0, length + lines - 1)
 		}
 
 		return {
-			start: getRangeLength(toStartRange),
-			end: getRangeLength(toEndRange)
+			start: Math.min(Math.max(getRangeLength(toStartRange), 0), this.state.content.length),
+			end: Math.min(Math.max(getRangeLength(toEndRange), 0), this.state.content.length)
 		}
+
+		// TODO: out of bounds check
 	}
 
 	setSelection({ start, end }: EditorSelection): void {
@@ -178,23 +178,27 @@ export class Editor {
 		if (!selection)
 			return
 
+		end = Math.max(0, Math.min(end, this.state.content.length))
+		start = Math.max(0, Math.min(start, end))
+
 		let currentLength = 0
 		let startNode: Node | null = null
 		let startOffset = 0
 		let endNode: Node | null = null
 		let endOffset = 0
 
-		const findNodeAndOffset = (targetLength: number, lineDiv: Element): [Node, number] => {
-			let currentLength = 0
+		function findNodeAndOffset(targetLength: number, lineDiv: Element): [Node, number] {
 			const walker = document.createTreeWalker(lineDiv, NodeFilter.SHOW_TEXT)
+			let length = 0
+			let node
 
-			let node: Node | null
 			while (node = walker.nextNode()) {
 				const nodeLength = (node as Text).length
-				if (currentLength + nodeLength >= targetLength) {
-					return [node, targetLength - currentLength]
-				}
-				currentLength += nodeLength
+
+				if (length + nodeLength >= targetLength)
+					return [node, targetLength - length]
+
+				length += nodeLength
 			}
 
 			return [lineDiv, 0]
@@ -207,12 +211,12 @@ export class Editor {
 			const isEmptyLine = lineDiv.firstChild instanceof HTMLBRElement
 			const lineLength = lineDiv.textContent?.length ?? 0
 
-			if (!startNode && currentLength + lineLength >= start) {
+			if (!startNode && currentLength + lineLength >= start)
 				[startNode, startOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(start - currentLength, lineDiv)
-			}
 
 			if (!endNode && currentLength + lineLength >= end) {
 				[endNode, endOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(end - currentLength, lineDiv)
+
 				break
 			}
 
@@ -228,39 +232,25 @@ export class Editor {
 			selection.addRange(range)
 		}
 	}
-
-	get content(): string {
-		return this.lines.join('\n')
-	}
-
-	// TODO
-	set content(content: string) {
-		const selection = this.getSelection()
-
-		this.lines = content.split('\n')
-		selection.start = selection.end = selection.start + content.length
-
-		this.updateDOM()
-
-		if (this.root.matches(':focus'))
-			this.setSelection(selection)
-	}
 }
 
-function escapeHTMLEncode(str: string) {
-  var div = document.createElement('div');
-  var text = document.createTextNode(str);
-  div.appendChild(text);
-  return div.innerHTML;
- }
-
+// TODO
 function markdown(text: string) {
-	text = escapeHTMLEncode(text)
+	function escapeHTML(str: string) {
+		const elm = document.createElement('div')
+		const text = document.createTextNode(str)
+
+		elm.appendChild(text)
+
+		return elm.innerHTML
+	}
+
+	text = escapeHTML(text)
 
 	const tokens = []
 
 	// Headings
-	tokens.push([...text.matchAll(/^(?<formatting>#)(?<text>\s.*$)/gim)])
+	tokens.push([...text.matchAll(/^(?<formatting>#{1,6})(?<text>\s.*$)/gim)])
 
 	// Highlight
 	tokens.push([...text.matchAll(/^(?<formatting>!!)(?<text>\s.*$)/gim)])
@@ -273,29 +263,34 @@ function markdown(text: string) {
 	tokens.push([...text.matchAll(/(?<formatting>`)(?<text>[^`]*?[^`])\1/gim)])
 
 	for (const token of tokens.flatMap(t => t)) {
-		const symbol = `<span class="md-mark">${token.groups.formatting}</span>`
+		const symbol = `<span class="md-mark">${token.groups!.formatting}</span>`
 		const md = (() => {
-			switch (token.groups.formatting) {
+			switch (token.groups!.formatting) {
 				// Headings
-				case '#': return `<h1>${symbol}${token.groups.text}</h1>`
+				case '#':
+				case '##':
+				case '###':
+				case '####':
+				case '#####':
+				case '######': return `<h${token.groups!.formatting.length}>${symbol}${token.groups!.text}<h${token.groups!.formatting.length}>`
 
 				// Highlight
-				case '!!': return `<b style="color: #f80">${symbol}${token.groups.text}</b>`
+				case '!!': return `<b style="color: #f80">${symbol}${token.groups!.text}</b>`
 
 				// Italic
 				case '*':
-				case '_': return `<i>${symbol}${token.groups.text}${symbol}</i>`
+				case '_': return `<i>${symbol}${token.groups!.text}${symbol}</i>`
 
 				// Bold
 				case '**':
-				case '__': return `<b>${symbol}${token.groups.text}${symbol}</b>`
+				case '__': return `<b>${symbol}${token.groups!.text}${symbol}</b>`
 
 				// Bold + Italic
 				case '***':
-				case '___': return `<b><i>${symbol}${token.groups.text}${symbol}</i></b>`
+				case '___': return `<b><i>${symbol}${token.groups!.text}${symbol}</i></b>`
 
 				// Inline code
-				case '`': return `<code>${symbol}${token.groups.text}${symbol}</code>`
+				case '`': return `<code>${symbol}${token.groups!.text}${symbol}</code>`
 				default: return token[0]
 			}
 		})()
@@ -305,3 +300,10 @@ function markdown(text: string) {
 
 	return text
 }
+
+// TODO:
+// - editor state
+//	- selection
+//	- doc
+//	- lineAt
+// - smart dom upd

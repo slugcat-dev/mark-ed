@@ -3,9 +3,16 @@
 }
 
 body {
-	min-height: 100vh;
 	padding: 1rem;
 	font-family: sans-serif;
+}
+
+#info {
+	margin-top: .5rem;
+	font-size: .75rem;
+	text-align: right;
+	font-family: monospace;
+	opacity: .75;
 }
 
 .md-editor {
@@ -17,9 +24,4 @@ body {
 
 .md-mark {
 	opacity: .5;
-}
-
-h1 {
-	font-size: 1.25rem;
-	margin: 0;
 }
