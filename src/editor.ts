@@ -1,24 +1,44 @@
-import { EditorState } from './state'
+import { escapeHTML } from './utils'
 import type { EditorSelection } from './types'
 
 export class Editor {
+	private lines = ['']
 	readonly root: HTMLElement
-	readonly state = new EditorState()
 
-	constructor(root: HTMLElement | string | null, content?: string) {
+	get content(): string {
+		return this.lines.join('\n')
+	}
+
+	set content(content: string) {
+		this.lines = content.split('\n')
+
+		this.updateDOM()
+
+		// Move the cursor to the end
+		if (this.focused)
+			this.setSelection({ start: content.length })
+	}
+
+	get focused(): boolean {
+		return this.root === document.activeElement
+	}
+
+	/**
+	 * Create a new Editor instance
+	 *
+	 * @param root The element on which the editor will be rendered
+	 */
+	constructor(root: HTMLElement | string) {
 		const element = typeof root === 'string'
 			? document.getElementById(root)
 			: root
 
 		if (!element)
-			throw Error('Could not create editor: Root element does not exist')
+			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
 
 		this.createEditorElement()
-
-		if (content)
-			this.state.content = content
 	}
 
 	private createEditorElement(): void {
@@ -32,7 +52,8 @@ export class Editor {
 		// @ts-expect-error
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
 
-		// Clear the DOM
+		// TODO: EditorConfig
+		this.root.style.tabSize = '2'
 		this.root.innerHTML = '<div class="md-line"><br></div>'
 
 		// Add event listeners
@@ -40,23 +61,6 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handleInput.bind(this))
 		this.root.addEventListener('keydown', this.handleKey.bind(this))
 		this.root.addEventListener('paste', this.handlePaste.bind(this))
-		this.state.addEventListener('contentchange', this.handleContentUpdate.bind(this))
-		document.addEventListener('selectionchange', this.handleSelectionChange.bind(this))
-	}
-
-	get focused(): boolean {
-		return this.root === document.activeElement
-	}
-
-	private handleSelectionChange(e: Event) {
-		this.state.selection = this.getSelection()
-
-		console.log(this.state.selection)
-	}
-
-	private handleContentUpdate() {
-		this.updateDOM()
-		// TODO: cursor at end
 	}
 
 	private handleInput(event: Event): void {
@@ -65,11 +69,19 @@ export class Editor {
 		if (event instanceof InputEvent && event.isComposing)
 			return
 
+		const selection = this.getSelection()
+
 		this.updateLines()
+		this.updateDOM()
+
+		// Changing the DOM confuses the browser about where to place the cursor,
+		// so we place it to where it was before the update
+		this.setSelection(selection)
 	}
 
-	// TODO: keymap handler
 	private handleKey(event: KeyboardEvent): void {
+		// TODO: Keymap handler
+
 		if (event.key === 'Enter') {
 			event.preventDefault()
 			this.insertAtSelection('\n')
@@ -88,54 +100,52 @@ export class Editor {
 		this.insertAtSelection(event.clipboardData.getData('text/plain'))
 	}
 
-	// TODO: rn, state
 	private updateLines(): void {
-		this.state.clearLines()
-		let lines: string[] = []
-
-		if (!this.root.firstChild) {
+		if (!this.root.firstChild)
 			this.root.innerHTML = '<div class="md-line"><br></div>'
 
-			return
-		}
+		this.lines = []
 
-		for (const node of this.root.childNodes)
-			lines.push(...(node.textContent ?? '').split('\n'))
-
-		this.state.content = lines.join('\n')
+		// Using this.root.textContent doesn't include line breaks
+		for (const node of this.root.children)
+			this.lines.push(node.textContent ?? '')
 	}
 
+	// TODO: DOM diffing
 	private updateDOM(): void {
-		const selection = this.getSelection()
-
 		this.root.innerHTML = ''
 
-		// TODO: state, smart upd
-		for (const line of this.state.lines) {
+		for (const line of this.lines) {
 			const lineElm = document.createElement('div')
 
 			lineElm.className = 'md-line'
-			lineElm.innerHTML = markdown(line)
 
 			if (line.length === 0)
 				lineElm.innerHTML = '<br>'
+			else
+				lineElm.innerHTML = markdown(line)
 
 			this.root.appendChild(lineElm)
 		}
-
-		this.setSelection(selection)
 	}
 
-	// TODO: rev, state
+	/**
+	 * Insert the given text at the cursor position, or replace the currently selected text
+	 */
 	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
 
-		this.state.content = this.state.content.slice(0, selection.start) + text + this.state.content.slice(selection.end)
+		this.content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
 		selection.start = selection.end = selection.start + text.length
 
 		this.setSelection(selection)
 	}
 
+	/**
+	 * Get the current text selection within the editor
+	 *
+	 * @returns An object with the `start` and `end` positions of the selection in characters
+	 */
 	getSelection(): EditorSelection {
 		const selection = document.getSelection()
 
@@ -151,6 +161,7 @@ export class Editor {
 		toEndRange.selectNodeContents(this.root)
 		toEndRange.setEnd(range.endContainer, range.endOffset)
 
+		// Again, range.textContent would not include line breaks
 		function getRangeLength(range: Range): number {
 			const fragment = range.cloneContents()
 			const lines = fragment.querySelectorAll('div.md-line').length
@@ -165,32 +176,34 @@ export class Editor {
 		}
 
 		return {
-			start: Math.min(Math.max(getRangeLength(toStartRange), 0), this.state.content.length),
-			end: Math.min(Math.max(getRangeLength(toEndRange), 0), this.state.content.length)
+			start: Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length)),
+			end: Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
 		}
-
-		// TODO: out of bounds check
 	}
 
-	setSelection({ start, end }: EditorSelection): void {
+	/**
+	 * Set the text selection within the editor
+	 */
+	setSelection({ start, end }: Partial<EditorSelection>): void {
 		const selection = document.getSelection()
 
 		if (!selection)
 			return
 
-		end = Math.max(0, Math.min(end, this.state.content.length))
-		start = Math.max(0, Math.min(start, end))
+		// Use the start or end position from the current selection if one is not provided
+		const current = this.getSelection()
 
-		let currentLength = 0
-		let startNode: Node | null = null
-		let startOffset = 0
-		let endNode: Node | null = null
-		let endOffset = 0
+		start = start !== undefined ? start : current.start
+		end = end !== undefined ? end : current.start
+
+		// Limit the selection to content bounds
+		end = Math.max(0, Math.min(end, this.content.length))
+		start = Math.max(0, Math.min(start, end))
 
 		function findNodeAndOffset(targetLength: number, lineDiv: Element): [Node, number] {
 			const walker = document.createTreeWalker(lineDiv, NodeFilter.SHOW_TEXT)
-			let length = 0
 			let node
+			let length = 0
 
 			while (node = walker.nextNode()) {
 				const nodeLength = (node as Text).length
@@ -204,10 +217,13 @@ export class Editor {
 			return [lineDiv, 0]
 		}
 
-		for (const lineDiv of this.root.children) {
-			if (!lineDiv.matches('div.md-line'))
-				continue
+		let currentLength = 0
+		let startNode: Node | null = null
+		let startOffset = 0
+		let endNode: Node | null = null
+		let endOffset = 0
 
+		for (const lineDiv of this.root.children) {
 			const isEmptyLine = lineDiv.firstChild instanceof HTMLBRElement
 			const lineLength = lineDiv.textContent?.length ?? 0
 
@@ -234,17 +250,8 @@ export class Editor {
 	}
 }
 
-// TODO
-function markdown(text: string) {
-	function escapeHTML(str: string) {
-		const elm = document.createElement('div')
-		const text = document.createTextNode(str)
-
-		elm.appendChild(text)
-
-		return elm.innerHTML
-	}
-
+// TODO: Tmp markdown renderer
+function markdown(text: string): string {
 	text = escapeHTML(text)
 
 	const tokens = []
@@ -300,10 +307,3 @@ function markdown(text: string) {
 
 	return text
 }
-
-// TODO:
-// - editor state
-//	- selection
-//	- doc
-//	- lineAt
-// - smart dom upd

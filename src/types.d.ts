@@ -3,9 +3,8 @@ export interface EditorSelection {
 	end: number
 }
 
-export interface Line {
-	start: number
-	end: number
-	num: number
-	text: string
+export interface DiffResult {
+	type: 'added' | 'changed' | 'deleted'
+	index: number
+	value: string
 }
