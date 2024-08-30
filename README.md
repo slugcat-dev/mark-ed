@@ -15,7 +15,7 @@ Note that it does not implement the full [CommonMark](https://commonmark.org/) o
 Install the package using:
 
 ```sh
-npm i @slugcat-dev/mark-ed
+npm install @slugcat-dev/mark-ed
 ```
 
 You can then create your own editor like this:
@@ -25,7 +25,7 @@ You can then create your own editor like this:
 ```
 
 ```ts
-import { Editor } from '../src/index'
+import { Editor } from '@slugcat-dev/mark-ed'
 
 // Create the Editor instance
 const editor = new Editor('editor')
