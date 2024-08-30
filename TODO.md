@@ -11,3 +11,4 @@ new Editor(root, config)
 - DOM diffing
 - deployment / installation section in readme
 - proper markdown parsing
+- readonly

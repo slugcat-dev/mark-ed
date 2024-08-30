@@ -1,5 +1,5 @@
 /**
- * Escape special HTML characters
+ * Escape special HTML characters in a string.
  */
 export function escapeHTML(str: string): string {
 	return str

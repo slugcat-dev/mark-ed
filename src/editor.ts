@@ -16,7 +16,7 @@ export class Editor {
 
 		// Move the cursor to the end
 		if (this.focused)
-			this.setSelection({ start: content.length })
+			this.setSelection(content.length)
 	}
 
 	get focused(): boolean {
@@ -24,9 +24,9 @@ export class Editor {
 	}
 
 	/**
-	 * Create a new Editor instance
+	 * Create a new Editor instance.
 	 *
-	 * @param root The element on which the editor will be rendered
+	 * @param root - The element on which the editor will be rendered.
 	 */
 	constructor(root: HTMLElement | string) {
 		const element = typeof root === 'string'
@@ -130,7 +130,8 @@ export class Editor {
 	}
 
 	/**
-	 * Insert the given text at the cursor position, or replace the currently selected text
+	 * Insert the given text at the cursor position,
+	 * or replace the currently selected text.
 	 */
 	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
@@ -142,9 +143,10 @@ export class Editor {
 	}
 
 	/**
-	 * Get the current text selection within the editor
+	 * Get the current text selection within the editor.
 	 *
-	 * @returns An object with the `start` and `end` positions of the selection in characters
+	 * @returns An object with the `start` and `end` positions of the selection,
+	 * as character offset from the start of the content.
 	 */
 	getSelection(): EditorSelection {
 		const selection = document.getSelection()
@@ -182,21 +184,62 @@ export class Editor {
 	}
 
 	/**
-	 * Set the text selection within the editor
+	 * Set the text selection within the editor.
+	 *
+	 * @param selection - An object specifying the new `start` and `end` positions.
 	 */
-	setSelection({ start, end }: Partial<EditorSelection>): void {
-		const selection = document.getSelection()
+	setSelection(selection: EditorSelection): void
 
-		if (!selection)
+	/**
+	 * Set the text selection within the editor.
+	 *
+	 * @param selection - An object specifying the new `start` and `end` positions.
+	 * @param collapse - If true, collapses the selection to the specified `start` or `end` position,
+	 * otherwise extends the selection.
+	 */
+	setSelection(selection: Omit<EditorSelection, 'start'> | Omit<EditorSelection, 'end'>, collapse?: boolean): void
+
+	/**
+	 * Set the text selection within the editor.
+	 *
+	 * @param selection - The new `start` and `end` position of the selection.
+	 */
+	setSelection(selection: number): void
+
+	setSelection(selection: EditorSelection | Omit<EditorSelection, 'start'> | Omit<EditorSelection, 'end'> | number, collapse = true): void {
+		const documentSelection = document.getSelection()
+
+		if (!documentSelection)
 			return
 
-		// Use the start or end position from the current selection if one is not provided
-		const current = this.getSelection()
+		// Determine the correct new start and end positions
+		let start = 0
+		let end = 0
 
-		start = start !== undefined ? start : current.start
-		end = end !== undefined ? end : current.start
+		if (typeof selection === 'number')
+			start = end = selection
+		else if ('start' in selection && 'end' in selection) {
+			start = selection.start
+			end = selection.end
+		} else {
+			if (collapse) {
+				if ('end' in selection) start = end = selection.end
+				else start = end = selection.start
+			} else {
+				// Extend the current selection
+				const currentSelection = this.getSelection()
 
-		// Limit the selection to content bounds
+				if ('start' in selection) {
+					start = selection.start
+					end = Math.max(currentSelection.end, start)
+				} else {
+					end = selection.end
+					start = Math.min(currentSelection.start, end)
+				}
+			}
+		}
+
+		// Limit the selection to the bounds of the content
 		end = Math.max(0, Math.min(end, this.content.length))
 		start = Math.max(0, Math.min(start, end))
 
@@ -218,10 +261,10 @@ export class Editor {
 		}
 
 		let currentLength = 0
-		let startNode: Node | null = null
 		let startOffset = 0
-		let endNode: Node | null = null
 		let endOffset = 0
+		let startNode
+		let endNode
 
 		for (const lineDiv of this.root.children) {
 			const isEmptyLine = lineDiv.firstChild instanceof HTMLBRElement
@@ -244,8 +287,8 @@ export class Editor {
 
 			range.setStart(startNode, startOffset)
 			range.setEnd(endNode, endOffset)
-			selection.removeAllRanges()
-			selection.addRange(range)
+			documentSelection.removeAllRanges()
+			documentSelection.addRange(range)
 		}
 	}
 }

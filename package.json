@@ -1,8 +1,8 @@
 {
   "name": "mark-ed",
   "type": "module",
-  "version": "1.0.0",
-  "description": "Yet another Markdown editor",
+  "version": "0.0.1",
+  "description": "In-browser editor that supports Markdown formatting",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
