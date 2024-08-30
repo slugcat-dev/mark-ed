@@ -69,13 +69,13 @@ export class Editor {
 		if (event instanceof InputEvent && event.isComposing)
 			return
 
-		const selection = this.getSelection()
-
 		this.updateLines()
-		this.updateDOM()
 
 		// Changing the DOM confuses the browser about where to place the cursor,
-		// so we place it to where it was before the update
+		// so we place it to where it was before after the update
+		const selection = this.getSelection()
+
+		this.updateDOM()
 		this.setSelection(selection)
 	}
 
