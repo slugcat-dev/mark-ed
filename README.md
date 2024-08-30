@@ -12,7 +12,13 @@ Note that it does not implement the full [CommonMark](https://commonmark.org/) o
 - **[TinyMDE](https://github.com/jefago/tiny-markdown-editor)** - Another in-browser Markdown editor
 
 ## Usage
-You can create your own editor like this:
+Install the package using:
+
+```sh
+npm i @slugcat-dev/mark-ed
+```
+
+You can then create your own editor like this:
 
 ```html
 <div id="editor"></div>
