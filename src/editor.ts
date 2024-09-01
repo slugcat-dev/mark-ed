@@ -1,8 +1,13 @@
-import { escapeHTML } from './utils'
-import type { EditorSelection } from './types'
+import { MarkdownParser } from './markdown'
+
+export interface EditorSelection {
+	start: number
+	end: number
+}
 
 export class Editor {
 	private lines = ['']
+	private markdown = new MarkdownParser()
 	readonly root: HTMLElement
 
 	get content(): string {
@@ -113,7 +118,9 @@ export class Editor {
 
 	// TODO: DOM diffing
 	private updateDOM(): void {
-		this.root.innerHTML = ''
+		this.root.innerHTML = this.markdown.parse(this.lines)
+
+		return
 
 		for (const line of this.lines) {
 			const lineElm = document.createElement('div')
@@ -123,7 +130,7 @@ export class Editor {
 			if (line.length === 0)
 				lineElm.innerHTML = '<br>'
 			else
-				lineElm.innerHTML = markdown(line)
+				lineElm.innerHTML = line
 
 			this.root.appendChild(lineElm)
 		}
@@ -291,62 +298,4 @@ export class Editor {
 			documentSelection.addRange(range)
 		}
 	}
-}
-
-// TODO: Tmp markdown renderer
-function markdown(text: string): string {
-	text = escapeHTML(text)
-
-	const tokens = []
-
-	// Headings
-	tokens.push([...text.matchAll(/^(?<formatting>#{1,6})(?<text>\s.*$)/gim)])
-
-	// Highlight
-	tokens.push([...text.matchAll(/^(?<formatting>!!)(?<text>\s.*$)/gim)])
-
-	// Bold, Italic
-	tokens.push([...text.matchAll(/(?<formatting>\*{1,3})(?<text>[^\*]*?[^\*])\1/gim)])
-	tokens.push([...text.matchAll(/(?<formatting>_{1,3})(?<text>[^_]*?[^_])\1/gim)])
-
-	// Inline code
-	tokens.push([...text.matchAll(/(?<formatting>`)(?<text>[^`]*?[^`])\1/gim)])
-
-	for (const token of tokens.flatMap(t => t)) {
-		const symbol = `<span class="md-mark">${token.groups!.formatting}</span>`
-		const md = (() => {
-			switch (token.groups!.formatting) {
-				// Headings
-				case '#':
-				case '##':
-				case '###':
-				case '####':
-				case '#####':
-				case '######': return `<h${token.groups!.formatting.length}>${symbol}${token.groups!.text}<h${token.groups!.formatting.length}>`
-
-				// Highlight
-				case '!!': return `<b style="color: #f80">${symbol}${token.groups!.text}</b>`
-
-				// Italic
-				case '*':
-				case '_': return `<i>${symbol}${token.groups!.text}${symbol}</i>`
-
-				// Bold
-				case '**':
-				case '__': return `<b>${symbol}${token.groups!.text}${symbol}</b>`
-
-				// Bold + Italic
-				case '***':
-				case '___': return `<b><i>${symbol}${token.groups!.text}${symbol}</i></b>`
-
-				// Inline code
-				case '`': return `<code>${symbol}${token.groups!.text}${symbol}</code>`
-				default: return token[0]
-			}
-		})()
-
-		text = text.replace(token[0], md)
-	}
-
-	return text
 }

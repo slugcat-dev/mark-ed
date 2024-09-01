@@ -1,4 +1,8 @@
-import { DiffResult } from './types'
+export interface DiffResult {
+	type: 'added' | 'changed' | 'deleted'
+	index: number
+	value: string
+}
 
 // Still searching for an appropriate diffing method that works with DOM updates,
 // here are my some of my attempts so far:

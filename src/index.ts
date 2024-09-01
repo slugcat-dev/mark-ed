@@ -1,2 +1,1 @@
-export { Editor } from './editor'
-export type { EditorSelection } from './types'
+export { Editor, type EditorSelection } from './editor'

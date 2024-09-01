@@ -7,20 +7,43 @@ body {
 	font-family: sans-serif;
 }
 
-#info {
-	margin-top: .5rem;
-	font-size: .75rem;
-	text-align: right;
-	font-family: monospace;
-	opacity: .75;
-}
-
 .md-editor {
 	padding: .5rem;
 	border: 1px solid #ccc;
 	border-radius: .25rem;
 }
 
+.md-line {
+	line-height: 1.25em;
+
+	h1, h2, h3, h4, h5, h6 {
+		margin-block: .5em;
+		line-height: 1.25em;
+	}
+
+	code {
+		font-family: monospace;
+		font-size: .875rem;
+	}
+}
+
 .md-mark {
-	opacity: .5;
+	color: #888;
+}
+
+.md-code-lang {
+	color: #048;
+}
+
+.md-quote {
+	position: relative;
+
+	&::before {
+		content: '';
+		position: absolute;
+		left: -4px;
+		width: 2px;
+		height: 1.25rem;
+		background-color: #888;
+	}
 }
