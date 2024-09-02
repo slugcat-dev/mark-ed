@@ -6,7 +6,7 @@ export interface EditorSelection {
 }
 
 export class Editor {
-	private lines = ['']
+	private lines: string[] = []
 	private markdown = new MarkdownParser()
 	readonly root: HTMLElement
 
@@ -105,6 +105,9 @@ export class Editor {
 		this.insertAtSelection(event.clipboardData.getData('text/plain'))
 	}
 
+	/**
+	 * Read back the content from DOM
+	 */
 	private updateLines(): void {
 		if (!this.root.firstChild)
 			this.root.innerHTML = '<div class="md-line"><br></div>'
@@ -118,19 +121,13 @@ export class Editor {
 
 	// TODO: DOM diffing
 	private updateDOM(): void {
-		this.root.innerHTML = this.markdown.parse(this.lines)
+		this.root.innerHTML = ''
 
-		return
-
-		for (const line of this.lines) {
+		for (const line of this.markdown.parse(this.lines)) {
 			const lineElm = document.createElement('div')
 
 			lineElm.className = 'md-line'
-
-			if (line.length === 0)
-				lineElm.innerHTML = '<br>'
-			else
-				lineElm.innerHTML = line
+			lineElm.innerHTML = line
 
 			this.root.appendChild(lineElm)
 		}

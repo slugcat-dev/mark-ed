@@ -3,9 +3,10 @@ new Editor(root, config)
 
 - tab size
 - initial content
+- markdown grammar
 
 # Other
-- ctrl + c
+- ctrl + c, ctrl + b, ...
 - Setup demo page
 - wrap selection
 - Keymap handler

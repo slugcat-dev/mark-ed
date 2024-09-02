@@ -12,6 +12,8 @@ const lines = [
 	'',
 	'Normal Text',
 	'',
+	'---',
+	'',
 	'```script',
 	'code();',
 	'```',
@@ -20,4 +22,11 @@ const lines = [
 	'> Quote'
 ]
 
-output.innerHTML = md.parse(lines)
+for (const line of md.parse(lines)) {
+	const lineElm = document.createElement('div')
+
+	lineElm.className = 'md-line'
+	lineElm.innerHTML = line
+
+	output.appendChild(lineElm)
+}

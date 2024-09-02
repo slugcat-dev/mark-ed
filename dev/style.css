@@ -31,6 +31,20 @@ body {
 	color: #888;
 }
 
+.md-thematic-break {
+	position: relative;
+
+	::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 25%;
+		width: 50%;
+		height: 2px;
+		background-color: #ccc;
+	}
+}
+
 .md-code-lang {
 	color: #048;
 }
