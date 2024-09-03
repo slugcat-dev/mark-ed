@@ -1,4 +1,4 @@
-import { escapeHTML, fix } from './markdown'
+import { escapeHTML, fix, parseInline } from './markdown'
 
 export interface LineRule {
 	regex: RegExp
@@ -11,8 +11,17 @@ export interface BlockRule {
 	replace: (line: string) => string
 }
 
+export interface InlineRule {
+	regex: RegExp
+	replace: (match: RegExpExecArray) => string
+}
+
 export interface LineGrammar {
 	[key: string]: LineRule | BlockRule
+}
+
+export interface InlineGrammar {
+	[key: string]: InlineRule
 }
 
 export const defaultLineGrammar: LineGrammar = {
@@ -27,14 +36,14 @@ export const defaultLineGrammar: LineGrammar = {
 		}
 	},
 	ATXHeading: {
-		regex: /^(?<indent>\s*)(?<mark>#{1,6})(?<text>\s.*)$/,
+		regex: /^(?<indent>\s*)(?<mark>#{1,6}\s)(?<text>.*)$/,
 		replace(match: RegExpExecArray) {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
-			const text = escapeHTML(match.groups!.text)
-			const level = mark.length
+			const text = parseInline(match.groups!.text)
+			const level = mark.length - 1
 
-			return `<h${level}>${indent}<span class="md-mark">${mark}</span>${text}</h${level}>`
+			return `<h${level} class="md-heading">${indent}<span class="md-mark">${mark}</span>${text}</h${level}>`
 		}
 	},
 	CodeBlock: {
@@ -51,7 +60,7 @@ export const defaultLineGrammar: LineGrammar = {
 
 			return {
 				match,
-				replacement: `<code>${indent}<span class="md-mark">${mark}</span>${lang.length > 0 ? `<span class="md-code-lang">${lang}</span>` : ''}${rest}</code>`
+				replacement: `<code class="md-code-block">${indent}<span class="md-mark">${mark}</span>${lang.length > 0 ? `<span class="md-code-lang">${lang}</span>` : ''}${rest}</code>`
 			}
 		},
 		close(line: string, openMatch: RegExpExecArray) {
@@ -64,10 +73,10 @@ export const defaultLineGrammar: LineGrammar = {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
 
-			return `<code>${indent}<span class="md-mark">${mark}</span></code>`
+			return `<code class="md-code-block">${indent}<span class="md-mark">${mark}</span></code>`
 		},
 		replace(line: string) {
-			return `<code>${fix(line)}</code>`
+			return `<code class="md-code-block">${fix(line)}</code>`
 		}
 	},
 	BlockQuote: {
@@ -78,6 +87,21 @@ export const defaultLineGrammar: LineGrammar = {
 			const text = escapeHTML(match.groups!.text)
 
 			return `<div class="md-quote">${indent}<span class="md-mark">${mark}</span>${text}</div>`
+		}
+	}
+}
+
+export const defaultInlineGrammar: InlineGrammar = {
+	Bold: {
+		regex: /\*\*(.+?)\*\*/g,
+		replace(match) {
+			return `<strong><span class="md-mark">**</span>${fix(match[1])}<span class="md-mark">**</span></strong>`
+		}
+	},
+	InlineCode: {
+		regex: /`(.+?)`/g,
+		replace(match) {
+			return `<code class="md-code"><span class="md-mark">\`</span>${fix(match[1])}<span class="md-mark">\`</span></code>`
 		}
 	}
 }

@@ -4,6 +4,7 @@
 
 body {
 	padding: 1rem;
+	font-size: 1rem;
 	font-family: sans-serif;
 }
 
@@ -14,27 +15,20 @@ body {
 }
 
 .md-line {
+	position: relative;
 	line-height: 1.25em;
-
-	h1, h2, h3, h4, h5, h6 {
-		margin-block: .5em;
-		line-height: 1.25em;
-	}
-
-	code {
-		font-family: monospace;
-		font-size: .875rem;
-	}
 }
 
 .md-mark {
 	color: #888;
 }
 
-.md-thematic-break {
-	position: relative;
+.md-hidden {
+	display: none;
+}
 
-	::before {
+.md-thematic-break {
+	&::before {
 		content: '';
 		position: absolute;
 		top: 50%;
@@ -43,21 +37,60 @@ body {
 		height: 2px;
 		background-color: #ccc;
 	}
+
+	.md-hidden {
+		display: initial;
+		opacity: 0;
+	}
+}
+
+.md-heading {
+	margin-block: .5em;
+	line-height: 1.25em;
+}
+
+.md-code,
+.md-code-block {
+	font-size: .875em;
+	font-family: monospace;
+	background-color: #8884;
+}
+
+.md-code {
+	padding-inline: .125rem;
+}
+
+.md-code-block {
+	display: block;
+	padding-inline: .5rem;
+
+	.md-hidden {
+		display: initial;
+	}
 }
 
 .md-code-lang {
 	color: #048;
 }
 
-.md-quote {
-	position: relative;
+.md-quote .md-hidden {
+	display: initial;
+	color: transparent;
 
 	&::before {
 		content: '';
 		position: absolute;
-		left: -4px;
 		width: 2px;
 		height: 1.25rem;
 		background-color: #888;
+	}
+}
+
+.md-line:has(~ .md-line .md-quote > .md-mark:not(.md-hidden)) .md-quote > .md-mark.md-hidden,
+.md-line:has(.md-quote > .md-mark:not(.md-hidden)) ~ .md-line .md-quote > .md-mark.md-hidden {
+	color: #888;
+
+	&::before {
+		content: unset;
 	}
 }

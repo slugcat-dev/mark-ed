@@ -5,9 +5,17 @@ export interface EditorSelection {
 	end: number
 }
 
+export interface Line {
+	num: number
+	start: number
+	end: number
+	text: string
+}
+
 export class Editor {
 	private lines: string[] = []
 	private markdown = new MarkdownParser()
+	private selection = this.getSelection()
 	readonly root: HTMLElement
 
 	get content(): string {
@@ -16,6 +24,7 @@ export class Editor {
 
 	set content(content: string) {
 		this.lines = content.split('\n')
+		this.selection = this.getSelection()
 
 		this.updateDOM()
 
@@ -66,6 +75,7 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handleInput.bind(this))
 		this.root.addEventListener('keydown', this.handleKey.bind(this))
 		this.root.addEventListener('paste', this.handlePaste.bind(this))
+		document.addEventListener('selectionchange', this.handleSelection.bind(this))
 	}
 
 	private handleInput(event: Event): void {
@@ -105,6 +115,18 @@ export class Editor {
 		this.insertAtSelection(event.clipboardData.getData('text/plain'))
 	}
 
+  private handleSelection(): void {
+		const selection = this.getSelection()
+
+		if (selection.start === this.selection.start && selection.end === this.selection.end)
+			return
+
+		this.selection = selection
+
+		for (const lineElm of this.root.children)
+			this.hideMarks(lineElm, selection)
+  }
+
 	/**
 	 * Read back the content from DOM
 	 */
@@ -121,6 +143,8 @@ export class Editor {
 
 	// TODO: DOM diffing
 	private updateDOM(): void {
+		const selection = this.getSelection()
+
 		this.root.innerHTML = ''
 
 		for (const line of this.markdown.parse(this.lines)) {
@@ -130,7 +154,100 @@ export class Editor {
 			lineElm.innerHTML = line
 
 			this.root.appendChild(lineElm)
+			this.hideMarks(lineElm, selection)
 		}
+	}
+
+	/**
+	 * Hide Markdown marks in a line that are not in the currect selection.
+	 */
+	private hideMarks(lineElm: Element, selection: EditorSelection): void {
+		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
+			const start = this.getElmOffset(element)
+			const end = start + (element.textContent?.length ?? 0)
+			const marks = element.querySelectorAll('& > .md-mark')
+			const isVisible = selection.start <= end && selection.end >= start
+
+			marks.forEach(mark => {
+				(mark as HTMLElement).classList.toggle('md-hidden', !(this.focused && isVisible))
+			})
+		})
+	}
+
+	/**
+	* Get the character offset of an element.
+	*/
+	private getElmOffset(target: Element): number {
+		const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
+		let node
+		let offset = 0
+
+		function isTarget(node: Node): boolean {
+			while (node) {
+				if (node === target)
+					return true
+
+				node = node.parentNode!
+			}
+
+			return false
+		}
+
+		while (node = walker.nextNode()) {
+			// To not hardcode md-line here, add one for each direct child of the editor instead
+			if (node.parentElement === this.root)
+				offset++
+			else if (node.nodeType === Node.TEXT_NODE) {
+				if (isTarget(node))
+						break
+
+				offset += node.textContent?.length ?? 0
+			}
+		}
+
+		return offset - 1
+	}
+
+	/**
+	 * Get a line by number.
+	 *
+	 * @returns An object holding the positions and text of the line.
+	 */
+	line(num: number): Line {
+		if (num < 0 || num >= this.lines.length)
+			throw new RangeError(`Invalid line ${num} in document with ${this.lines.length} lines`)
+
+		const text = this.lines[num]
+		const start = this.lines.slice(0, num).reduce((acc, line) => acc + line.length + 1, 0)
+		const end = start + text.length
+
+		return { num, start, end, text }
+	}
+
+	/**
+	 * Get the line around a specific position in the content.
+	 *
+	 * @returns An object holding the positions and text of the line.
+	 */
+	lineAt(pos: number): Line {
+		if (pos < 0 || pos > this.content.length)
+			throw new RangeError(`Invalid position ${pos} in document of length ${this.content.length}`)
+
+		let num = 0
+		let start = 0
+
+		for (const line of this.lines) {
+			if (start + line.length >= pos)
+				break
+
+			start += line.length + 1
+			num++
+		}
+
+		const text = this.lines[num]
+		const end = start + text.length
+
+		return { num, start, end, text }
 	}
 
 	/**

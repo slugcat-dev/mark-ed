@@ -13,7 +13,8 @@ new Editor(root, config)
 - DOM diffing
 - deployment / installation section in readme
 - proper markdown parsing
-- readonly
+- full keymap
+- selection 1 tick late when |# heading enter
 - Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
 
 - https://github.com/markedjs/marked/blob/master/src/Renderer.ts

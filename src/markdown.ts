@@ -10,7 +10,7 @@
 //
 // - docstrings
 
-import { BlockRule, defaultLineGrammar } from './grammar'
+import { type BlockRule, defaultLineGrammar, defaultInlineGrammar, type InlineGrammar } from './grammar'
 
 const punctuation = /[\p{S}|\p{P}]/u
 const autolinkStart = /(https?:\/\/[^\W_])|[^\W_](?:[\w.+-]*[^\W_])?@[^\W_]/giy
@@ -19,6 +19,7 @@ const emailEnd = /(?:[\w-]*[^\W_])?[\w-]*(?:\.[^\W_](?:[\w-]*[^\W_])?)+/gy
 
 export class MarkdownParser {
 	private lineGrammar = defaultLineGrammar
+	private inlineGrammar = defaultInlineGrammar
 	lines: string[] = []
 	lineTypes: (string | null)[] = []
 
@@ -36,7 +37,7 @@ export class MarkdownParser {
 		for (let lineNum = 0; lineNum < lines.length; lineNum++) {
 			const line = lines[lineNum]
 			let lineType = null
-			let html = fix(line)
+			let html = parseInline(line)
 
 			if (openType) {
 				lineType = openType
@@ -103,4 +104,17 @@ export function escapeHTML(str: string): string {
 		.replaceAll('<', '&lt;')
 		.replaceAll('>', '&gt;')
 		.replaceAll('&', '&amp;')
+}
+
+
+// TODO: tmp
+export function parseInline(text: string, grammar: InlineGrammar = defaultInlineGrammar): string {
+  let result = fix(text);
+  for (const rule of Object.values(grammar)) {
+    result = result.replace(rule.regex, (match, ...args) => {
+      const execArray = [match, ...args];
+      return rule.replace(execArray as RegExpExecArray);
+    });
+  }
+  return result;
 }
