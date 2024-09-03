@@ -13,10 +13,15 @@ export interface Line {
 }
 
 export class Editor {
-	private lines: string[] = []
 	private markdown = new MarkdownParser()
 	private selection = this.getSelection()
 	readonly root: HTMLElement
+
+	/**
+	 * The lines that the editor content consists of.
+	 * If you modify this value, you need to call `editor.updateDOM()` manually.
+	 */
+	lines: string[] = []
 
 	get content(): string {
 		return this.lines.join('\n')
@@ -24,13 +29,9 @@ export class Editor {
 
 	set content(content: string) {
 		this.lines = content.split('\n')
-		this.selection = this.getSelection()
 
-		this.updateDOM()
-
-		// Move the cursor to the end
-		if (this.focused)
-			this.setSelection(content.length)
+		// Update the DOM and Move the cursor to the end
+		this.updateDOM(Editor.selectionFrom(content.length))
 	}
 
 	get focused(): boolean {
@@ -38,7 +39,7 @@ export class Editor {
 	}
 
 	/**
-	 * Create a new Editor instance.
+	 * Create a new `Editor` instance.
 	 *
 	 * @param root - The element on which the editor will be rendered.
 	 */
@@ -71,27 +72,26 @@ export class Editor {
 		this.root.innerHTML = '<div class="md-line"><br></div>'
 
 		// Add event listeners
-		this.root.addEventListener('input', this.handleInput.bind(this))
-		this.root.addEventListener('compositionend', this.handleInput.bind(this))
-		this.root.addEventListener('keydown', this.handleKey.bind(this))
-		this.root.addEventListener('paste', this.handlePaste.bind(this))
-		document.addEventListener('selectionchange', this.handleSelection.bind(this))
+		this.root.addEventListener('input', this.handleInputBound)
+		this.root.addEventListener('compositionend', this.handleInputBound)
+		this.root.addEventListener('keydown', this.handleKeyBound)
+		this.root.addEventListener('paste', this.handlePasteBound)
+		document.addEventListener('selectionchange', this.handleSelectionBound)
 	}
 
-	private handleInput(event: Event): void {
+	private handleInputBound = this.handleInput.bind(this)
+	private handleKeyBound = this.handleKey.bind(this)
+	private handlePasteBound = this.handlePaste.bind(this)
+	private handleSelectionBound = this.handleSelection.bind(this)
+
+	private handleInput(event?: Event): void {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
 		if (event instanceof InputEvent && event.isComposing)
 			return
 
 		this.updateLines()
-
-		// Changing the DOM confuses the browser about where to place the cursor,
-		// so we place it to where it was before after the update
-		const selection = this.getSelection()
-
 		this.updateDOM()
-		this.setSelection(selection)
 	}
 
 	private handleKey(event: KeyboardEvent): void {
@@ -125,10 +125,10 @@ export class Editor {
 
 		for (const lineElm of this.root.children)
 			this.hideMarks(lineElm, selection)
-  }
+	}
 
 	/**
-	 * Read back the content from DOM
+	 * Read back the content from the DOM
 	 */
 	private updateLines(): void {
 		if (!this.root.firstChild)
@@ -142,8 +142,16 @@ export class Editor {
 	}
 
 	// TODO: DOM diffing
-	private updateDOM(): void {
-		const selection = this.getSelection()
+	/**
+	 * Apply changes made to the editor content to the DOM.
+	 * Also calls the Markdown parse function.
+	 *
+	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
+	 */
+	updateDOM(overwriteSelection?: EditorSelection): void {
+		// Changing the DOM confuses the browser about where to place the cursor,
+		// so we place it to where it was before after the update
+		const selection = overwriteSelection ?? this.getSelection()
 
 		this.root.innerHTML = ''
 
@@ -156,6 +164,9 @@ export class Editor {
 			this.root.appendChild(lineElm)
 			this.hideMarks(lineElm, selection)
 		}
+
+		if (this.focused)
+			this.setSelection(selection)
 	}
 
 	/**
@@ -411,5 +422,29 @@ export class Editor {
 			documentSelection.removeAllRanges()
 			documentSelection.addRange(range)
 		}
+	}
+
+	/**
+	 * Unregister all event listeners and clean up the editor.
+	 */
+	destroy(): void {
+		this.root.removeEventListener('input', this.handleInputBound)
+		this.root.removeEventListener('compositionend', this.handleInputBound)
+		this.root.removeEventListener('keydown', this.handleKeyBound)
+		this.root.removeEventListener('paste', this.handlePasteBound)
+		document.removeEventListener('selectionchange', this.handleSelectionBound)
+
+		// Make the editor no longer editable
+		this.root.removeAttribute('contenteditable')
+
+		// @ts-expect-error
+		this.root.style.webkitUserModify = ''
+	}
+
+	/**
+	 * Create an `EditorSelection` from a position.
+	 */
+	static selectionFrom(pos: number): EditorSelection {
+		return { start: pos, end: pos }
 	}
 }

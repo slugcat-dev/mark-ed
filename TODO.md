@@ -6,18 +6,13 @@ new Editor(root, config)
 - markdown grammar
 
 # Other
-- Setup demo page
-- wrap selection
 - Keymap handler
 - DOM diffing
 - deployment / installation section in readme
-- proper markdown parsing
-- full keymap
 - selection 1 tick late when |# heading enter
 - Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
 - code highlight
 - drag and drop
-- \n|**wee** delete
 
 - https://github.com/markedjs/marked/blob/master/src/Renderer.ts
 
