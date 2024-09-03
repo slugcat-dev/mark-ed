@@ -1,14 +1,8 @@
 // TODO:
 // - Inline pass-on
-// - md-line wrapper
-// - container blocks
-
-// list
-
-// code block open
-`=^••^= meow`
-//
+// - list
 // - docstrings
+`=^••^= meow`
 
 import { type BlockRule, defaultLineGrammar, defaultInlineGrammar, type InlineGrammar } from './grammar'
 
@@ -105,7 +99,6 @@ export function escapeHTML(str: string): string {
 		.replaceAll('>', '&gt;')
 		.replaceAll('&', '&amp;')
 }
-
 
 // TODO: tmp
 export function parseInline(text: string, grammar: InlineGrammar = defaultInlineGrammar): string {

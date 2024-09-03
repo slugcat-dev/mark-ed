@@ -1,4 +1,4 @@
-import { escapeHTML, fix, parseInline } from './markdown'
+import { escapeHTML, fix } from './markdown'
 
 export interface LineRule {
 	regex: RegExp
@@ -32,7 +32,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const mark = match.groups!.mark
 			const end = match.groups!.end
 
-			return `<div class="md-thematic-break">${indent}<span class="md-mark">${mark}</span>${end}</div>`
+			return `<div class="md-hr">${indent}<span class="md-mark">${mark}</span>${end}</div>`
 		}
 	},
 	ATXHeading: {
@@ -40,10 +40,20 @@ export const defaultLineGrammar: LineGrammar = {
 		replace(match: RegExpExecArray) {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
-			const text = parseInline(match.groups!.text)
+			const text = fix(match.groups!.text)
 			const level = mark.length - 1
 
 			return `<h${level} class="md-heading">${indent}<span class="md-mark">${mark}</span>${text}</h${level}>`
+		}
+	},
+	Subtext: {
+		regex: /^(?<indent>\s*)(?<mark>-#\s)(?<text>.*)$/,
+		replace(match: RegExpExecArray) {
+			const indent = match.groups!.indent
+			const mark = match.groups!.mark
+			const text = fix(match.groups!.text)
+
+			return `<span class="md-subtext">${indent}<span class="md-mark">${mark}</span>${text}</span>`
 		}
 	},
 	CodeBlock: {
@@ -91,7 +101,14 @@ export const defaultLineGrammar: LineGrammar = {
 	}
 }
 
+// TODO:
 export const defaultInlineGrammar: InlineGrammar = {
+	Italic: {
+		regex: /\_(.+?)\_/g,
+		replace(match) {
+			return `<i><span class="md-mark">_</span>${fix(match[1])}<span class="md-mark">_</span></i>`
+		}
+	},
 	Bold: {
 		regex: /\*\*(.+?)\*\*/g,
 		replace(match) {
@@ -103,5 +120,11 @@ export const defaultInlineGrammar: InlineGrammar = {
 		replace(match) {
 			return `<code class="md-code"><span class="md-mark">\`</span>${fix(match[1])}<span class="md-mark">\`</span></code>`
 		}
-	}
+	},
+	Strikethrough: {
+		regex: /~~(.+?)~~/g,
+		replace(match) {
+			return `<del><span class="md-mark">~~</span>${fix(match[1])}<span class="md-mark">~~</span></del>`
+		}
+	},
 }

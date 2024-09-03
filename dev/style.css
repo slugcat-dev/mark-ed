@@ -3,7 +3,7 @@
 }
 
 body {
-	padding: 1rem;
+	margin: 1rem;
 	font-size: 1rem;
 	font-family: sans-serif;
 }
@@ -16,48 +16,58 @@ body {
 
 .md-line {
 	position: relative;
-	line-height: 1.25em;
+	line-height: 1.25rem;
+	font-size: .875rem;
 }
 
 .md-mark {
+	display: inline-block;
 	color: #888;
 }
 
 .md-hidden {
-	display: none;
+	width: 0;
+	height: 0;
+	overflow: hidden;
 }
 
-.md-thematic-break {
-	&::before {
-		content: '';
-		position: absolute;
-		top: 50%;
-		left: 25%;
-		width: 50%;
-		height: 2px;
-		background-color: #ccc;
-	}
-
-	.md-hidden {
-		display: initial;
-		opacity: 0;
-	}
+.md-hr::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 25%;
+	width: 50%;
+	height: 3px;
+	background-color: #ccc;
+	border-radius: .125rem;
+	z-index: -1;
 }
 
 .md-heading {
-	margin-block: .5em;
+	display: inline-block;
+	margin-block: 0;
 	line-height: 1.25em;
+}
+
+.md-subtext {
+	font-size: .75rem;
+	font-weight: bold;
+	color: #666;
 }
 
 .md-code,
 .md-code-block {
-	font-size: .875em;
-	font-family: monospace;
-	background-color: #8884;
+	font-family: 'Ubuntu Mono', monospace;
+	background-color: #eee;
 }
 
 .md-code {
-	padding-inline: .125rem;
+	padding-block: .125rem;
+	border-radius: .25em;
+
+	&:has(.md-hidden) {
+		padding-inline: .25em;
+	}
 }
 
 .md-code-block {
@@ -69,28 +79,39 @@ body {
 	}
 }
 
+.md-line:first-child .md-code-block,
+.md-line:not(:has(.md-code-block)) + .md-line .md-code-block {
+	margin-top: .5rem;
+	border-top-left-radius: .375rem;
+	border-top-right-radius: .375rem;
+}
+
+.md-line:not(:has(+ .md-line .md-code-block)) .md-code-block,
+.md-line:last-child .md-code-block {
+	margin-bottom: .5rem;
+	border-bottom-right-radius: .375rem;
+	border-bottom-left-radius: .375rem;
+}
+
 .md-code-lang {
 	color: #048;
 }
 
-.md-quote .md-hidden {
+.md-quote > .md-mark {
 	display: initial;
+}
+
+.md-line:not(:has(~ .md-line .md-quote > .md-mark:not(.md-hidden))) .md-quote > .md-mark.md-hidden,
+.md-line:not(:has(.md-quote > .md-mark:not(.md-hidden))) ~ .md-line .md-quote > .md-mark.md-hidden {
 	color: transparent;
 
 	&::before {
 		content: '';
 		position: absolute;
-		width: 2px;
-		height: 1.25rem;
-		background-color: #888;
-	}
-}
-
-.md-line:has(~ .md-line .md-quote > .md-mark:not(.md-hidden)) .md-quote > .md-mark.md-hidden,
-.md-line:has(.md-quote > .md-mark:not(.md-hidden)) ~ .md-line .md-quote > .md-mark.md-hidden {
-	color: #888;
-
-	&::before {
-		content: unset;
+		top: -1px;
+		width: 3px;
+		height: calc(1.25rem + 2px);
+		background-color: #ccc;
+		border-radius: .125rem;
 	}
 }

@@ -12,10 +12,11 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "vite",
+    "build:dev": "vite build",
     "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.5.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.2"
   },

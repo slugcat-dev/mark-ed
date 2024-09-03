@@ -11,6 +11,7 @@ const lines = [
 	'###### Heading 6',
 	'',
 	'Normal Text',
+	'-# Subtext',
 	'',
 	'---',
 	'',

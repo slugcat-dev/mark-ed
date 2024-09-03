@@ -1,7 +1,7 @@
 # mark-ed
 **mark-ed** is a lightweight (zero-dependency) in-browser editor that supports Markdown formatting.
 
-**[DEMO]**
+**[DEMO](https://doublekekse.dev/mark-ed)**
 
 > [!NOTE]
 > This project is in early development and I'm currently working on it.\
@@ -36,6 +36,15 @@ editor.root.addEventListener('blur', () => {
   console.log('Editor content:')
   console.log(editor.content)
 })
+```
+
+### Recommended attributes for the editor element
+```ini
+role="textbox"
+aria-multiline="true"
+spellcheck="false"
+autocorrect="off"
+autocapitalize="off"
 ```
 
 ## Development
