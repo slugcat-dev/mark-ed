@@ -85,9 +85,7 @@ export const defaultLineGrammar: LineGrammar = {
 
 			return `<code class="md-code-block">${indent}<span class="md-mark">${mark}</span></code>`
 		},
-		replace(line: string) {
-			return `<code class="md-code-block">${fix(line)}</code>`
-		}
+		replace: (line: string) => `<code class="md-code-block">${fix(line)}</code>`
 	},
 	BlockQuote: {
 		regex: /^(?<indent>\s*)(?<mark>>)(?<text>.*)/,
@@ -105,26 +103,18 @@ export const defaultLineGrammar: LineGrammar = {
 export const defaultInlineGrammar: InlineGrammar = {
 	Italic: {
 		regex: /\_(.+?)\_/g,
-		replace(match) {
-			return `<i><span class="md-mark">_</span>${fix(match[1])}<span class="md-mark">_</span></i>`
-		}
+		replace: (match) => `<i><span class="md-mark">_</span>${match[1]}<span class="md-mark">_</span></i>`
 	},
 	Bold: {
 		regex: /\*\*(.+?)\*\*/g,
-		replace(match) {
-			return `<strong><span class="md-mark">**</span>${fix(match[1])}<span class="md-mark">**</span></strong>`
-		}
+		replace: (match) => `<strong><span class="md-mark">**</span>${match[1]}<span class="md-mark">**</span></strong>`
 	},
 	InlineCode: {
 		regex: /`(.+?)`/g,
-		replace(match) {
-			return `<code class="md-code"><span class="md-mark">\`</span>${fix(match[1])}<span class="md-mark">\`</span></code>`
-		}
+		replace: (match) => `<code class="md-code"><span class="md-mark">\`</span>${match[1]}<span class="md-mark">\`</span></code>`
 	},
 	Strikethrough: {
 		regex: /~~(.+?)~~/g,
-		replace(match) {
-			return `<del><span class="md-mark">~~</span>${fix(match[1])}<span class="md-mark">~~</span></del>`
-		}
+		replace: (match) => `<del><span class="md-mark">~~</span>${match[1]}<span class="md-mark">~~</span></del>`
 	},
 }

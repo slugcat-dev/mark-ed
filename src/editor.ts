@@ -1,4 +1,12 @@
 import { MarkdownParser } from './markdown'
+import { defaultKeymap, type Keymap, type CompiledKeybind, compileKeymap } from './keymap'
+import { defu } from './utils'
+
+export interface EditorConfig {
+	content: string
+	tabSize: number
+	keymap: Keymap
+}
 
 export interface EditorSelection {
 	start: number
@@ -7,7 +15,7 @@ export interface EditorSelection {
 
 export interface Line {
 	num: number
-	start: number
+	from: number
 	end: number
 	text: string
 }
@@ -15,6 +23,7 @@ export interface Line {
 export class Editor {
 	private markdown = new MarkdownParser()
 	private selection = this.getSelection()
+	private keymap: CompiledKeybind[]
 	readonly root: HTMLElement
 
 	/**
@@ -30,7 +39,7 @@ export class Editor {
 	set content(content: string) {
 		this.lines = content.split('\n')
 
-		// Update the DOM and Move the cursor to the end
+		// Update the DOM and move the cursor to the end
 		this.updateDOM(Editor.selectionFrom(content.length))
 	}
 
@@ -42,8 +51,9 @@ export class Editor {
 	 * Create a new `Editor` instance.
 	 *
 	 * @param root - The element on which the editor will be rendered.
+	 * @param config - The configuration for the editor.
 	 */
-	constructor(root: HTMLElement | string) {
+	constructor(root: HTMLElement | string, config: Partial<EditorConfig>) {
 		const element = typeof root === 'string'
 			? document.getElementById(root)
 			: root
@@ -54,6 +64,10 @@ export class Editor {
 		this.root = element
 
 		this.createEditorElement()
+
+		this.content = config.content ?? ''
+		this.root.style.tabSize = (config.tabSize ?? 2).toString()
+		this.keymap = compileKeymap(defu<Keymap>(config.keymap, defaultKeymap))
 	}
 
 	private createEditorElement(): void {
@@ -67,22 +81,13 @@ export class Editor {
 		// @ts-expect-error
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
 
-		// TODO: EditorConfig
-		this.root.style.tabSize = '2'
-		this.root.innerHTML = '<div class="md-line"><br></div>'
-
 		// Add event listeners
-		this.root.addEventListener('input', this.handleInputBound)
-		this.root.addEventListener('compositionend', this.handleInputBound)
-		this.root.addEventListener('keydown', this.handleKeyBound)
-		this.root.addEventListener('paste', this.handlePasteBound)
-		document.addEventListener('selectionchange', this.handleSelectionBound)
+		this.root.addEventListener('input', (event) => this.handleInput(event))
+		this.root.addEventListener('compositionend', (event) => this.handleInput(event))
+		this.root.addEventListener('keydown', (event) => this.handleKey(event))
+		this.root.addEventListener('paste', (event) => this.handlePaste(event))
+		document.addEventListener('selectionchange', () => this.handleSelection())
 	}
-
-	private handleInputBound = this.handleInput.bind(this)
-	private handleKeyBound = this.handleKey.bind(this)
-	private handlePasteBound = this.handlePaste.bind(this)
-	private handleSelectionBound = this.handleSelection.bind(this)
 
 	private handleInput(event?: Event): void {
 		// For composition input, only update the text after a `compositionend` event
@@ -95,14 +100,18 @@ export class Editor {
 	}
 
 	private handleKey(event: KeyboardEvent): void {
-		// TODO: Keymap handler
+		for (const keybind of this.keymap) {
+			if (
+				event.key.toLowerCase() !== keybind.key
+				|| event.ctrlKey !== keybind.ctrlKey
+				|| event.metaKey !== keybind.metaKey
+				|| event.shiftKey !== keybind.shiftKey
+				|| event.altKey !== keybind.altKey
+			)
+				continue
 
-		if (event.key === 'Enter') {
 			event.preventDefault()
-			this.insertAtSelection('\n')
-		} else if (event.key === 'Tab') {
-			event.preventDefault()
-			this.insertAtSelection('\t')
+			keybind.handler(this)
 		}
 	}
 
@@ -137,8 +146,8 @@ export class Editor {
 		this.lines = []
 
 		// Using this.root.textContent doesn't include line breaks
-		for (const node of this.root.children)
-			this.lines.push(node.textContent ?? '')
+		for (const lineElm of this.root.children)
+			this.lines.push(lineElm.textContent ?? '')
 	}
 
 	// TODO: DOM diffing
@@ -174,7 +183,7 @@ export class Editor {
 	 */
 	private hideMarks(lineElm: Element, selection: EditorSelection): void {
 		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
-			const start = this.getElmOffset(element)
+			const start = this.getElementOffset(element)
 			const end = start + (element.textContent?.length ?? 0)
 			const marks = element.querySelectorAll('& > .md-mark')
 			const isVisible = selection.start <= end && selection.end >= start
@@ -188,7 +197,7 @@ export class Editor {
 	/**
 	* Get the character offset of an element.
 	*/
-	private getElmOffset(target: Element): number {
+	private getElementOffset(target: Element): number {
 		const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
 		let node
 		let offset = 0
@@ -229,10 +238,9 @@ export class Editor {
 			throw new RangeError(`Invalid line ${num} in document with ${this.lines.length} lines`)
 
 		const text = this.lines[num]
-		const start = this.lines.slice(0, num).reduce((acc, line) => acc + line.length + 1, 0)
-		const end = start + text.length
+		const from = this.lines.slice(0, num).reduce((acc, line) => acc + line.length + 1, 0)
 
-		return { num, start, end, text }
+		return { num, from, end: from + text.length, text }
 	}
 
 	/**
@@ -245,20 +253,19 @@ export class Editor {
 			throw new RangeError(`Invalid position ${pos} in document of length ${this.content.length}`)
 
 		let num = 0
-		let start = 0
+		let from = 0
 
 		for (const line of this.lines) {
-			if (start + line.length >= pos)
+			if (from + line.length >= pos)
 				break
 
-			start += line.length + 1
+			from += line.length + 1
 			num++
 		}
 
 		const text = this.lines[num]
-		const end = start + text.length
 
-		return { num, start, end, text }
+		return { num, from, end: from + text.length, text }
 	}
 
 	/**
@@ -428,11 +435,11 @@ export class Editor {
 	 * Unregister all event listeners and clean up the editor.
 	 */
 	destroy(): void {
-		this.root.removeEventListener('input', this.handleInputBound)
-		this.root.removeEventListener('compositionend', this.handleInputBound)
-		this.root.removeEventListener('keydown', this.handleKeyBound)
-		this.root.removeEventListener('paste', this.handlePasteBound)
-		document.removeEventListener('selectionchange', this.handleSelectionBound)
+		this.root.removeEventListener('input', (event) => this.handleInput(event))
+		this.root.removeEventListener('compositionend', (event) => this.handleInput(event))
+		this.root.removeEventListener('keydown', (event) => this.handleKey(event))
+		this.root.removeEventListener('paste', (event) => this.handlePaste(event))
+		document.removeEventListener('selectionchange', () => this.handleSelection())
 
 		// Make the editor no longer editable
 		this.root.removeAttribute('contenteditable')

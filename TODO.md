@@ -1,25 +1,28 @@
 # EditorConfig
-new Editor(root, config)
-
-- tab size
-- initial content
-- markdown grammar
+- custom markdown grammar
 
 # Other
-- Keymap handler
 - DOM diffing
-- deployment / installation section in readme
-- selection 1 tick late when |# heading enter
-- Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
+- History
+- Inline markdown parsing
 - code highlight
+
+- default eslint
+
+- deployment / installation section in readme
+- Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
+
+# Bugs
+- selection 1 tick late when |# heading enter
+- selection 1 tick late when # heading enter| tab
 - drag and drop
 
+# Resources
 - https://github.com/markedjs/marked/blob/master/src/Renderer.ts
 
 - https://codemirror.net/docs/guide/
 - https://github.com/codemirror/state/blob/main/src/state.ts
 - https://github.com/codemirror/view/blob/main/src/editorview.ts
-- https://github.com/codemirror/commands/blob/main/src/history.ts
 
 - https://github.com/Wilfred/difftastic/wiki/Line-Based-Diffs
 
@@ -34,11 +37,8 @@ TODO:
 - Underline
 - Autolinks
 - Highlight
-
-Maybe:
 - Links
 - Images
-- Emoji
 
 Probably not included:
 - Link reference definitions
