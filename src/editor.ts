@@ -196,17 +196,19 @@ export class Editor {
 			while (start < len && before[start] === after[start])
 				start++
 
-			while (end > start && before[end - Math.max(delta, 0)] === after[end - Math.min(delta, 0)])
+			while (end - 1 > start && before[end - Math.max(delta, 0)] === after[end - Math.min(delta, 0)])
 				end--
 
+			console.log(start, end)
+
 			// Remove all children in the diff range
-			for (let i = start; i <= end; i++) {
+			for (let i = start; i <= end - Math.max(delta, 0); i++) {
 				if (this.root.children[start])
 					this.root.removeChild(this.root.children[start])
 			}
 
 			// Insert the new or updated lines
-			for (let i = start; i <= end + 1; i++) {
+			for (let i = start; i <= end; i++) {
 				const line = after[i]
 
 				if (line === undefined)
