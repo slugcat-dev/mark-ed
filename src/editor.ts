@@ -5,6 +5,7 @@ import { defu } from './utils'
 export interface EditorConfig {
 	content: string
 	tabSize: number
+	hideMarks: boolean
 	keymap: Keymap
 }
 
@@ -20,9 +21,17 @@ export interface Line {
 	text: string
 }
 
+const defaultConfig: EditorConfig = {
+	content: '',
+	tabSize: 2,
+	hideMarks: true,
+	keymap: defaultKeymap
+}
+
 export class Editor {
-	private markdown = new MarkdownParser()
 	private selection = this.getSelection()
+	private markdown = new MarkdownParser()
+	private config: EditorConfig
 	private keymap: CompiledKeybind[]
 	readonly root: HTMLElement
 
@@ -32,12 +41,16 @@ export class Editor {
 	 */
 	lines: string[] = []
 
+	get lineTypes(): (string | null)[] {
+		return this.markdown.lineTypes
+	}
+
 	get content(): string {
 		return this.lines.join('\n')
 	}
 
 	set content(content: string) {
-		this.lines = content.split('\n')
+		this.lines = content.split(/\r\n|\r|\n/)
 
 		// Update the DOM and move the cursor to the end
 		this.updateDOM(Editor.selectionFrom(content.length))
@@ -65,9 +78,10 @@ export class Editor {
 
 		this.createEditorElement()
 
-		this.content = config.content ?? ''
-		this.root.style.tabSize = (config.tabSize ?? 2).toString()
-		this.keymap = compileKeymap(defu<Keymap>(config.keymap, defaultKeymap))
+		this.config = defu(config, defaultConfig)
+		this.content = this.config.content
+		this.root.style.tabSize = this.config.tabSize.toString()
+		this.keymap = compileKeymap(this.config.keymap)
 	}
 
 	private createEditorElement(): void {
@@ -86,6 +100,8 @@ export class Editor {
 		this.root.addEventListener('compositionend', (event) => this.handleInput(event))
 		this.root.addEventListener('keydown', (event) => this.handleKey(event))
 		this.root.addEventListener('paste', (event) => this.handlePaste(event))
+		this.root.addEventListener('focus', () => this.handleSelection())
+		this.root.addEventListener('blur', () => this.handleSelection())
 		document.addEventListener('selectionchange', () => this.handleSelection())
 	}
 
@@ -150,29 +166,63 @@ export class Editor {
 			this.lines.push(lineElm.textContent ?? '')
 	}
 
-	// TODO: DOM diffing
 	/**
 	 * Apply changes made to the editor content to the DOM.
-	 * Also calls the Markdown parse function.
+	 * The Markdown parse function is called here.
 	 *
 	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
 	 */
 	updateDOM(overwriteSelection?: EditorSelection): void {
+		const before = this.markdown.lines
+		const after = this.markdown.parse(this.lines)
+		const delta = after.length - before.length
+		const len = Math.max(before.length, after.length)
+
 		// Changing the DOM confuses the browser about where to place the cursor,
 		// so we place it to where it was before after the update
 		const selection = overwriteSelection ?? this.getSelection()
 
-		this.root.innerHTML = ''
+		if (delta === 0) {
+			// No lines added or deleted, only apply changes
+			for (let i = 0; i < len; i++) {
+				if (before[i] !== after[i])
+					this.root.children[i].innerHTML = after[i]
+			}
+		} else {
+			// Calculate the diff range
+			let start = 0
+			let end = len - 1
 
-		for (const line of this.markdown.parse(this.lines)) {
-			const lineElm = document.createElement('div')
+			while (start < len && before[start] === after[start])
+				start++
 
-			lineElm.className = 'md-line'
-			lineElm.innerHTML = line
+			while (end > start && before[end - Math.max(delta, 0)] === after[end - Math.min(delta, 0)])
+				end--
 
-			this.root.appendChild(lineElm)
-			this.hideMarks(lineElm, selection)
+			// Remove all children in the diff range
+			for (let i = start; i <= end; i++) {
+				if (this.root.children[start])
+					this.root.removeChild(this.root.children[start])
+			}
+
+			// Insert the new or updated lines
+			for (let i = start; i <= end + 1; i++) {
+				const line = after[i]
+
+				if (line === undefined)
+					continue
+
+				const lineElm = document.createElement('div')
+
+				lineElm.className = 'md-line'
+				lineElm.innerHTML = line
+
+				this.root.insertBefore(lineElm, this.root.children[i] ?? null)
+			}
 		}
+
+		for (const lineElm of this.root.children)
+			this.hideMarks(lineElm, selection)
 
 		if (this.focused)
 			this.setSelection(selection)
@@ -182,6 +232,9 @@ export class Editor {
 	 * Hide Markdown marks in a line that are not in the currect selection.
 	 */
 	private hideMarks(lineElm: Element, selection: EditorSelection): void {
+		if (!this.config.hideMarks)
+			return
+
 		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
 			const start = this.getElementOffset(element)
 			const end = start + (element.textContent?.length ?? 0)
@@ -274,11 +327,12 @@ export class Editor {
 	 */
 	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
+		const content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
 
-		this.content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
+		this.lines = content.split(/\r\n|\r|\n/)
 		selection.start = selection.end = selection.start + text.length
 
-		this.setSelection(selection)
+		this.updateDOM(selection)
 	}
 
 	/**
@@ -439,6 +493,8 @@ export class Editor {
 		this.root.removeEventListener('compositionend', (event) => this.handleInput(event))
 		this.root.removeEventListener('keydown', (event) => this.handleKey(event))
 		this.root.removeEventListener('paste', (event) => this.handlePaste(event))
+		this.root.removeEventListener('focus', () => this.handleSelection())
+		this.root.removeEventListener('blur', () => this.handleSelection())
 		document.removeEventListener('selectionchange', () => this.handleSelection())
 
 		// Make the editor no longer editable

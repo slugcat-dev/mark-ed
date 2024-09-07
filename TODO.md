@@ -2,7 +2,6 @@
 - custom markdown grammar
 
 # Other
-- DOM diffing
 - History
 - Inline markdown parsing
 - code highlight

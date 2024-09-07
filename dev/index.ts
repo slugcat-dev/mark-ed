@@ -1,10 +1,10 @@
 import { Editor } from '../src/index'
 
 const editor = new Editor('editor', {
-	content: '# Hello, World!\n**wee** markdown works\nThis is `mark-ed` in action!',
+	content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`',
 	keymap: {
-		'Alt ArrowUp': () => moveLine(false),
-		'Alt ArrowDown': () => moveLine(true),
+		'Alt ArrowUp': () => moveLine(true),
+		'Alt ArrowDown': () => moveLine(false),
 	}
 })
 

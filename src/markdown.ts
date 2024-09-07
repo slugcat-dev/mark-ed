@@ -2,7 +2,6 @@
 // - Inline pass-on
 // - list
 // - docstrings
-`=^••^= meow`
 
 import { type BlockRule, defaultLineGrammar, defaultInlineGrammar, type InlineGrammar } from './grammar'
 

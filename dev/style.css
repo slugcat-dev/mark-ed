@@ -68,8 +68,9 @@ body {
 	padding-block: .125rem;
 	border-radius: .25em;
 
-	&:has(.md-hidden) {
-		padding-inline: .25em;
+	.md-hidden {
+		display: initial;
+		opacity: 0;
 	}
 }
 
