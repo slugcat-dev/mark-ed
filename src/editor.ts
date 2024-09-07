@@ -191,15 +191,19 @@ export class Editor {
 		} else {
 			// Calculate the diff range
 			let start = 0
-			let end = len - 1
 
 			while (start < len && before[start] === after[start])
 				start++
 
-			while (end - 1 > start && before[end - Math.max(delta, 0)] === after[end - Math.min(delta, 0)])
-				end--
+			/*
+			let end = len - 1
 
-			console.log(start, end)
+			while (end > start && before[end - Math.max(delta, 0)] === after[end + Math.min(delta, 0)])
+				end--
+			*/
+
+			// This should be the same?
+			const end = start + delta
 
 			// Remove all children in the diff range
 			for (let i = start; i <= end - Math.max(delta, 0); i++) {
