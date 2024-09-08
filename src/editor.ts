@@ -1,5 +1,5 @@
-import { MarkdownParser } from './markdown'
-import { defaultKeymap, type Keymap, type CompiledKeybind, compileKeymap } from './keymap'
+import { MarkdownParser, type MarkdownParserConfig } from './markdown'
+import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
 import { defu } from './utils'
 
 export interface EditorConfig {
@@ -7,6 +7,7 @@ export interface EditorConfig {
 	tabSize: number
 	hideMarks: boolean
 	keymap: Keymap
+	markdown: Partial<MarkdownParserConfig>
 }
 
 export interface EditorSelection {
@@ -25,15 +26,16 @@ const defaultConfig: EditorConfig = {
 	content: '',
 	tabSize: 2,
 	hideMarks: true,
-	keymap: defaultKeymap
+	keymap: defaultKeymap,
+	markdown: {}
 }
 
 export class Editor {
-	private selection = this.getSelection()
-	private markdown = new MarkdownParser()
 	private config: EditorConfig
 	private keymap: CompiledKeybind[]
+	private selection = this.getSelection()
 	readonly root: HTMLElement
+	readonly markdown: MarkdownParser
 
 	/**
 	 * The lines that the editor content consists of.
@@ -75,13 +77,13 @@ export class Editor {
 			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
+		this.config = defu(config, defaultConfig)
+		this.keymap = compileKeymap(this.config.keymap)
+		this.markdown = new MarkdownParser(this.config.markdown)
 
 		this.createEditorElement()
 
-		this.config = defu(config, defaultConfig)
 		this.content = this.config.content
-		this.root.style.tabSize = this.config.tabSize.toString()
-		this.keymap = compileKeymap(this.config.keymap)
 	}
 
 	private createEditorElement(): void {
@@ -94,6 +96,8 @@ export class Editor {
 		// Prevent the rich formatting popup on iOS
 		// @ts-expect-error
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
+
+		this.root.style.tabSize = this.config.tabSize.toString()
 
 		// Add event listeners
 		this.root.addEventListener('input', (event) => this.handleInput(event))
@@ -140,7 +144,7 @@ export class Editor {
 		this.insertAtSelection(event.clipboardData.getData('text/plain'))
 	}
 
-  private handleSelection(): void {
+	private handleSelection(): void {
 		const selection = this.getSelection()
 
 		if (selection.start === this.selection.start && selection.end === this.selection.end)
@@ -191,19 +195,15 @@ export class Editor {
 		} else {
 			// Calculate the diff range
 			let start = 0
+			let end = len - 1
 
 			while (start < len && before[start] === after[start])
 				start++
 
-			/*
-			let end = len - 1
-
-			while (end > start && before[end - Math.max(delta, 0)] === after[end + Math.min(delta, 0)])
-				end--
-			*/
-
-			// This should be the same?
-			const end = start + delta
+			if (start > Math.min(before.length, after.length)) {
+				while (end > start && before[end - Math.max(delta, 0)] === after[end + Math.min(delta, 0)])
+					end--
+			}
 
 			// Remove all children in the diff range
 			for (let i = start; i <= end - Math.max(delta, 0); i++) {
@@ -240,6 +240,10 @@ export class Editor {
 	private hideMarks(lineElm: Element, selection: EditorSelection): void {
 		if (!this.config.hideMarks)
 			return
+
+		// TODO: support for multiline blocks (blockquotes, ...)
+		// Use `this.lineTypes`.
+		// Currently requires CSS with complex selectors.
 
 		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
 			const start = this.getElementOffset(element)

@@ -5,6 +5,7 @@
 - History
 - Inline markdown parsing
 - code highlight
+- block acc rules
 
 - default eslint
 
@@ -29,7 +30,6 @@
 TODO:
 - Lists
 - Task list items
-- Backslash escapes
 - Code spans
 - Emphasis and strong emphasis
 - Strikethrough

@@ -24,5 +24,5 @@ export function defu<T>(obj: Partial<T> | undefined, defaults: T): T {
 }
 
 function isPlainObject(obj: any): boolean {
-  return obj && typeof obj === 'object' && obj.constructor === Object
+	return obj && typeof obj === 'object' && obj.constructor === Object
 }
