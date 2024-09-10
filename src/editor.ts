@@ -43,7 +43,7 @@ export class Editor {
 	 */
 	lines: string[] = []
 
-	get lineTypes(): (string | null)[] {
+	get lineTypes(): string[] {
 		return this.markdown.lineTypes
 	}
 
@@ -77,6 +77,7 @@ export class Editor {
 			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
+		// TODO: default config - what to merge - keybinds, grammar
 		this.config = defu(config, defaultConfig)
 		this.keymap = compileKeymap(this.config.keymap)
 		this.markdown = new MarkdownParser(this.config.markdown)
@@ -200,10 +201,13 @@ export class Editor {
 			while (start < len && before[start] === after[start])
 				start++
 
+			// TODO: fix end calculation
+			/*
 			if (start > Math.min(before.length, after.length)) {
 				while (end > start && before[end - Math.max(delta, 0)] === after[end + Math.min(delta, 0)])
 					end--
 			}
+			*/
 
 			// Remove all children in the diff range
 			for (let i = start; i <= end - Math.max(delta, 0); i++) {
@@ -340,9 +344,8 @@ export class Editor {
 		const content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
 
 		this.lines = content.split(/\r\n|\r|\n/)
-		selection.start = selection.end = selection.start + text.length
 
-		this.updateDOM(selection)
+		this.updateDOM(Editor.selectionFrom(selection.start + text.length))
 	}
 
 	/**

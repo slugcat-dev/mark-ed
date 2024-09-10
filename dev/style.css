@@ -105,8 +105,7 @@ body {
 	display: initial;
 }
 
-.md-line:not(:has(~ .md-line .md-quote > .md-mark:not(.md-hidden))) .md-quote > .md-mark.md-hidden,
-.md-line:not(:has(.md-quote > .md-mark:not(.md-hidden))) ~ .md-line .md-quote > .md-mark.md-hidden {
+.md-quote > .md-mark.md-hidden {
 	color: transparent;
 
 	&::before {

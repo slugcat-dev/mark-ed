@@ -6,14 +6,11 @@ export interface MarkdownParserConfig {
 	inlineGrammar: InlineGrammar
 }
 
-const punctuationLeading = /^[\p{S}|\p{P}]/u
-const punctuationTrailing = /[\p{S}|\p{P}]$/u
-
 export class MarkdownParser {
 	private lineGrammar: LineGrammar
 	private inlineGrammar: InlineGrammar
 	lines: string[] = []
-	lineTypes: (string | null)[] = []
+	lineTypes: string[] = []
 
 	constructor(config?: Partial<MarkdownParserConfig>) {
 		this.lineGrammar = defu(config?.lineGrammar ?? {}, defaultLineGrammar)
@@ -29,36 +26,38 @@ export class MarkdownParser {
 
 		for (let lineNum = 0; lineNum < lines.length; lineNum++) {
 			const line = lines[lineNum]
-			let lineType = null
+			let lineType = 'Default'
 			let html = this.parseInline(line)
 
 			if (openType) {
 				lineType = openType
 
 				const rule = this.lineGrammar[lineType] as BlockRule
-				const close = rule.close(line, openMatch!)
+				const close = rule.close(line, openMatch!, this)
 
 				if (close) {
 					openType = null
 					openMatch = null
 					html = close
 				} else
-					html = rule.line(line)
+					html = rule.line(line, this)
 			} else {
 				for (const type in this.lineGrammar) {
 					const rule = this.lineGrammar[type]
 
-					if ('regex' in rule) {
-						const match = rule.regex.exec(line)
+					if ('regex' in rule || 'match' in rule) {
+						const match = 'regex' in rule
+							? rule.regex.exec(line)
+							: rule.match(line)
 
 						if (match) {
 							lineType = type
-							html = rule.replace(match, this.parseInline.bind(this))
+							html = rule.replace(match, this)
 
 							break
 						}
 					} else {
-						const open = rule.open(line)
+						const open = rule.open(line, this)
 
 						if (open) {
 							openType = lineType = type
@@ -78,47 +77,61 @@ export class MarkdownParser {
 		return this.lines
 	}
 
-	parseInline(str: string): string {
-		let string = str
-		let offset = 0
-		let processed = ''
-		let delimiterStack = []
+	parseInline(string: string): string {
+		const stack = []
+		let str = string
+		let pos = 0
+		let res = ''
 
-		outer: while (string) {
-			// Process non-delimiter rules
+		// Precompute the delimiter regex
+		const delimiters = Object.values(this.inlineGrammar)
+			.reduce((delimiters, rule) => {
+				if ('delimiter' in rule && !delimiters.includes(rule.delimiter))
+					delimiters += rule.delimiter
+
+				return delimiters
+			}, '')
+			.replace(/[-\\\]^]/g, '\\$&')
+		const delimiterRegex = new RegExp(`^([${delimiters}])\\1*`)
+
+		outer: while (str) {
+			// Match-and-replace rules
 			for (const type in this.inlineGrammar) {
 				const rule = this.inlineGrammar[type]
 
-				if ('regex' in rule) {
-					const cap = rule.regex.exec(string)
+				if ('regex' in rule || 'match' in rule) {
+					const match = 'regex' in rule
+							? rule.regex.exec(str)
+							: rule.match(str)
 
-					if (cap) {
-						string = string.substring(cap[0].length)
-						offset += cap[0].length
-						processed += rule.replace(cap)
+					if (match) {
+						str = str.substring(match[0].length)
+						pos += match[0].length
+						res += rule.replace(match, this)
 
 						continue outer
 					}
 				}
 			}
 
-			// Check for emphasis delimiter run
-			const cap = /(^\*+)|(^_+)/.exec(string)
+			// Delimiter rules
+			const match = delimiterRegex.exec(str)
 
-			if (cap) {
-				const delimiter = cap[0][0]
-				const delimString = cap[0]
-				let len = cap[0].length
+			if (match) {
+				const delimiter = match[1]
+				let len = match[0].length
 
-				string = string.substring(len)
+				str = str.substring(len)
 
-				const preceding = offset > 0 ? str.substring(0, offset) : ' '
-				const following = offset + len < str.length ? string : ' '
-				const punctuationFollows = following.match(punctuationLeading)
-				const punctuationPrecedes = preceding.match(punctuationTrailing)
+				// Check if the delimiter run can open or close
+				const preceding = pos > 0 ? string.substring(0, pos) : ' '
+				const following = pos + len < string.length ? str : ' '
+				const punctuationFollows = following.match(/^[\p{S}|\p{P}]/u)
+				const punctuationPrecedes = preceding.match(/[\p{S}|\p{P}]$/u)
 				const whitespaceFollows = following.match(/^\s/)
 				const whitespacePrecedes = preceding.match(/\s$/)
 
+				// Check right-flanking and left-flanking
 				let canOpen = !whitespaceFollows && (
 					!punctuationFollows
 					|| !!whitespacePrecedes
@@ -130,98 +143,92 @@ export class MarkdownParser {
 					|| !!punctuationFollows
 				)
 
-				// TODO:
-				if (delimiter === '_' && canOpen && canClose) {
+				// Don't allow an intraword delimiter run with a single underscore
+				if (delimiter === '_' && len === 1 && canOpen && canClose) {
 					canOpen = !!punctuationPrecedes
 					canClose = !!punctuationFollows
 				}
 
+				// If the delimiter run can close, check if there are matching open delimiters on the stack
 				if (canClose) {
-					let stackPointer = delimiterStack.length - 1
+					let stackPointer = stack.length - 1
 
-					// See if we can find a matching opening delimiter, move down through the stack
 					while (len && stackPointer >= 0) {
-						// We found a matching delimiter, let's construct the formatted string
-						if (delimiterStack[stackPointer].delimiter === delimiter) {
+						if (stack[stackPointer].delimiter === delimiter) {
+							// Pop skipped (non-matching) delimiters from the stack
+							while (stackPointer < stack.length - 1) {
+								const entry = stack.pop()!
 
-							// First, if we skipped any stack levels, pop them immediately (non-matching delimiters)
-							while (stackPointer < delimiterStack.length - 1) {
-								const entry = delimiterStack.pop()!
-
-								processed = `${entry.output}${entry.delimString.substring(0, entry.count)}${processed}`
+								res = `${entry.res}${entry.delimiter.repeat(entry.len)}${res}`
 							}
 
-							// Then, format the string
-							if (len >= 2 && delimiterStack[stackPointer].count >= 2) {
-								if (delimiter === '*')
-									processed = `<strong><span class="md-mark">**</span>${processed}<span class="md-mark">**</span></strong>`
-								else
-									processed = `<span><span class="md-mark">__</span><ins>${processed}</ins><span class="md-mark">__</span></span>`
+							// Find a matching rule for the delimiter
+							const rule = Object.values(this.inlineGrammar)
+								.filter(rule => 'delimiter' in rule)
+								.sort((a, b) => b.length - a.length)
+								.find(rule => rule.delimiter.includes(delimiter) && len >= rule.length)
 
-								len -= 2;
-								delimiterStack[stackPointer].count -= 2;
+							if (rule) {
+								res = rule.replace(delimiter.repeat(rule.length), res)
+								len -= rule.length
+								stack[stackPointer].len -= rule.length
 							} else {
-								processed = `<em><span class="md-mark">${delimiter}</span>${processed}<span class="md-mark">${delimiter}</span></em>`
-								len -= 1;
-								delimiterStack[stackPointer].count -= 1;
+								// If no matching rule is found, append the unused characters to the result
+								res = `${res}${delimiter.repeat(len)}`
+								len = 0
 							}
 
-							// If that stack level is empty now, pop it
-							if (delimiterStack[stackPointer].count == 0) {
-								const entry = delimiterStack.pop()!
+							// Pop the stack entry if it is now empty
+							if (stack[stackPointer].len <= 0) {
+								const entry = stack.pop()!
 
-								processed = `${entry.output}${processed}`;
-								stackPointer--;
+								res = `${entry.res}${res}`
+								stackPointer--
 							}
-						} else {
-							// This stack level's delimiter type doesn't match the current delimiter type
-							// Go down one level in the stack
-							stackPointer--;
-						}
+						} else
+							stackPointer--
 					}
 				}
 
-				// If there are still delimiters left, and the delimiter run can open, push it on the stack
+				// If there are still characters left and the delimiter run can open, push it on the stack
 				if (len && canOpen) {
-					delimiterStack.push({
-						delimiter: delimiter,
-						delimString: delimString,
-						count: len,
-						output: processed,
+					stack.push({
+						delimiter,
+						len,
+						res
 					})
 
-					// Current formatted output has been pushed on the stack and will be prepended when the stack gets popped
-					processed = ''
+					// The processed output has been pushed on the stack and will be prepended when the stack gets popped
+					res = ''
 					len = 0
 				}
 
-				// Any delimiters that are left (closing unmatched) are appended to the output.
-				if (len) {
-					processed = `${processed}${delimString.substr(0, len)}`;
-				}
+				pos += match[0].length
 
-				offset += cap[0].length;
-				continue outer;
+				// Append unused characters to the output
+				if (len)
+					res = `${res}${match[0].substring(0, len)}`
+
+				continue outer
 			}
 
-			processed += string.substring(0, 1)
-			string = string.substring(1)
-			offset++
-
-			continue outer
+			// Advance to the next character
+			res += escapeHTML(str.substring(0, 1))
+			str = str.substring(1)
+			pos++
 		}
 
-		// Empty the stack, any opening delimiters are unused
-		while (delimiterStack.length) {
-			const entry = delimiterStack.pop()!
+		// Empty the stack, any delimiters left are unused
+		while (stack.length) {
+			const entry = stack.pop()!
 
-			processed = `${entry.output}${entry.delimString.substring(0, entry.count)}${processed}`
+			res = `${entry.res}${entry.delimiter.repeat(entry.len)}${res}`
 		}
 
-		if (processed.length === 0)
+		if (res.length === 0)
 			return '<br>'
 
-		return processed
+		return res
 	}
 }
 

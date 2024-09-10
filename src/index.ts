@@ -5,9 +5,11 @@ export {
 	type Line
 } from './editor'
 export type {
+	Match,
 	ReplaceRule,
+	RegexReplaceRule,
 	BlockRule,
-	InlineReplaceRule,
+	DelimiterRule,
 	LineGrammar,
 	InlineGrammar
 } from './grammar'

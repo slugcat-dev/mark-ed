@@ -3,7 +3,6 @@
 
 # Other
 - History
-- Inline markdown parsing
 - code highlight
 - block acc rules
 
@@ -12,10 +11,10 @@
 - deployment / installation section in readme
 - Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
 
+- mention in readme that you need css
+
 # Bugs
-- selection 1 tick late when |# heading enter
-- selection 1 tick late when # heading enter| tab
-- drag and drop
+- inserts charsfor opening delimiter when closing is found
 
 # Resources
 - https://github.com/markedjs/marked/blob/master/src/Renderer.ts
@@ -30,15 +29,9 @@
 TODO:
 - Lists
 - Task list items
-- Code spans
-- Emphasis and strong emphasis
-- Strikethrough
-- Underline
-- Autolinks
-- Highlight
+
+May be included later (in that order):
 - Links
 - Images
-
-Probably not included:
 - Link reference definitions
 - Tables

@@ -40,24 +40,32 @@ export function compileKeymap(keymap: Keymap): CompiledKeybind[] {
 }
 
 export const defaultKeymap: Keymap = {
+	// To properly insert newlines
 	'Enter': insertNewlineAndIndent,
-	'Ctrl Enter': insertNewlineAndIndent,
 	'Shift Enter': insertNewlineAndIndent,
-	'Tab': (ed: Editor) => {
+
+	// To allow moving the focus away from the editor with the keyboard
+	'Escape': (editor) => editor.root.blur(),
+
+	// Disable undo / redo as history doesn't function anyways
+	'Ctrl Z': () => {},
+	'Ctrl Y': () => {},
+
+	// Other keybinds
+	'Tab': (editor) => {
 		// TODO: indent lists etc
-		ed.insertAtSelection('\t')
+		editor.insertAtSelection('\t')
 	},
-	'Shift Tab': (ed) => {
+	'Shift Tab': (editor) => {
 		// TODO: outdent
-	},
-	'Escape': (ed) => ed.root.blur()
+	}
 }
 
-function insertNewlineAndIndent(ed: Editor) {
+function insertNewlineAndIndent(editor: Editor) {
 	// TODO: continue list quote etc
-	const selection = ed.getSelection()
-	const line = ed.lineAt(selection.start)
+	const selection = editor.getSelection()
+	const line = editor.lineAt(selection.start)
 	const indent = line.text.match(/^\s*/)
 
-	ed.insertAtSelection('\n' + indent)
+	editor.insertAtSelection('\n' + indent)
 }
