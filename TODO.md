@@ -18,7 +18,3 @@ https://github.github.com/gfm/
 - Images
 - Link reference definitions
 - Tables
-
-# README
-- How to install
-- https://unpkg.com/package@latest

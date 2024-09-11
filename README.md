@@ -3,6 +3,21 @@
 
 **[DEMO](https://doublekekse.dev/mark-ed)**
 
+## Installation
+You can install the package from NPM:
+
+```sh
+npm install @slugcat-dev/mark-ed
+```
+
+If you need a hosted version instead, you can use unpkg:
+
+```html
+<script type="module">
+	import { Editor } from 'https://unpkg.com/@slugcat-dev/mark-ed@latest'
+</script>
+```
+
 ## Usage
 You can then create your own editor like this:
 
@@ -34,7 +49,7 @@ autocapitalize="off"
 You can adjust these as you need.
 
 ## Styling
-Note that you need to properly style the editor if you want it to look good. CSS classes are prefixed with `md-`. Take a look at [`dev/style.css`](https://github.com/slugcat-dev/mark-ed/blob/main/dev/style.css) for an basic example.
+Note that you need to properly style the editor if you want it to look good. CSS classes are prefixed with `md-`. Take a look at [`dev/style.css`](https://github.com/slugcat-dev/mark-ed/blob/main/dev/style.css) for a basic example.
 
 ## Development
 To make development easier, this project comes with a live server to instantly view your changes. Install the needed development dependencies, then start the development server and open http://localhost:8000/ in your browser.
@@ -47,6 +62,6 @@ npm install
 npm run dev
 ```
 
-# Thanks to these Projects
-https://github.com/jefago/tiny-markdown-editor\
+## Thanks to these Projects
+https://github.com/jefago/tiny-markdown-editor \
 https://github.com/lezer-parser/markdown

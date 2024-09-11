@@ -3,7 +3,9 @@
   "type": "module",
   "version": "1.0.0",
   "description": "In-browser editor that supports Markdown formatting",
-  "repository": "github:slugcat-dev/mark-ed",
+  "repository": {
+    "url": "github:slugcat-dev/mark-ed"
+  },
   "keywords": [
     "editor",
     "markdown"

@@ -3,7 +3,6 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<script type="module" src="index.ts"></script>
 		<link rel="stylesheet" href="style.css">
 		<title>mark-ed</title>
 	</head>
@@ -16,8 +15,12 @@
 			autocorrect="off"
 			autocapitalize="off"
 		></div>
-		<div style="padding-top: .5rem; font-size: .75rem;">
-			<a href="https://github.com/slugcat-dev/mark-ed" style="float: right;">View on GitHub</a>
-		</div>
+		<script type="module">
+			import { Editor } from 'https://unpkg.com/@slugcat-dev/mark-ed@latest'
+
+			const editor = new Editor('editor', {
+				content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`',
+			})
+		</script>
 	</body>
 </html>
