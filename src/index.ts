@@ -4,16 +4,21 @@ export {
 	type EditorSelection,
 	type Line
 } from './editor'
-export type {
-	Match,
-	ReplaceRule,
-	RegexReplaceRule,
-	BlockRule,
-	DelimiterRule,
-	LineGrammar,
-	InlineGrammar
+export {
+	defaultLineGrammar,
+	defaultInlineGrammar,
+	type Match,
+	type ReplaceRule,
+	type RegexReplaceRule,
+	type BlockRule,
+	type DelimiterRule,
+	type LineGrammar,
+	type InlineGrammar
 } from './grammar'
-export type { Keymap } from './keymap'
+export {
+	defaultKeymap,
+	type Keymap
+} from './keymap'
 export {
 	MarkdownParser,
 	escapeHTML,

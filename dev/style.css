@@ -28,6 +28,8 @@ body {
 	/*
 	- Don't use `display: none`
 	- Don't use `inline-block` if not hidden
+
+	Both cause unexpected behaviour.
 	*/
 	display: inline-block;
 	width: 0;
@@ -68,9 +70,8 @@ body {
 	padding-block: .125rem;
 	border-radius: .25em;
 
-	.md-hidden {
-		display: initial;
-		opacity: 0;
+	&:has(.md-hidden) {
+		padding-inline: .25rem;
 	}
 }
 

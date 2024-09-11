@@ -5,6 +5,20 @@ const editor = new Editor('editor', {
 	keymap: {
 		'Alt ArrowUp': () => moveLine(true),
 		'Alt ArrowDown': () => moveLine(false),
+	},
+	markdown: {
+		lineGrammar: {
+			Subtext: {
+				regex: /^(?<indent>\s*)(?<mark>-#\s)(?<text>.*)$/,
+				replace(match, parser) {
+					const indent = match.groups!.indent
+					const mark = match.groups!.mark
+					const text = parser.parseInline(match.groups!.text)
+
+					return `<span class="md-subtext">${indent}<span class="md-mark">${mark}</span>${text}</span>`
+				}
+			}
+		}
 	}
 })
 

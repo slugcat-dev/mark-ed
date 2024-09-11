@@ -14,31 +14,6 @@ export interface CompiledKeybind {
 	handler: (editor: Editor) => void
 }
 
-export function compileKeymap(keymap: Keymap): CompiledKeybind[] {
-	return Object.entries(keymap).map(([key, handler]) => {
-		const parts = key.toLowerCase().split(' ')
-		const keybind = {
-			key: parts
-			.filter(k => !['ctrl', 'meta', 'shift', 'alt'].includes(k))
-			.map(k => k === 'space' ? ' ' : k)
-			.join(),
-			ctrlKey: parts.includes('ctrl'),
-			metaKey: parts.includes('meta'),
-			shiftKey: parts.includes('shift'),
-			altKey: parts.includes('alt'),
-			handler
-		}
-
-		// Convert `meta` to `ctrl` for normal operating systems
-		if (!isMac && keybind.metaKey && !keybind.ctrlKey) {
-			keybind.metaKey = false
-			keybind.ctrlKey = true
-		}
-
-		return keybind
-	})
-}
-
 export const defaultKeymap: Keymap = {
 	// To properly insert newlines
 	'Enter': insertNewlineAndIndent,
@@ -68,4 +43,29 @@ function insertNewlineAndIndent(editor: Editor) {
 	const indent = line.text.match(/^\s*/)
 
 	editor.insertAtSelection('\n' + indent)
+}
+
+export function compileKeymap(keymap: Keymap): CompiledKeybind[] {
+	return Object.entries(keymap).map(([key, handler]) => {
+		const parts = key.toLowerCase().split(' ')
+		const keybind = {
+			key: parts
+			.filter(k => !['ctrl', 'meta', 'shift', 'alt'].includes(k))
+			.map(k => k === 'space' ? ' ' : k)
+			.join(),
+			ctrlKey: parts.includes('ctrl'),
+			metaKey: parts.includes('meta'),
+			shiftKey: parts.includes('shift'),
+			altKey: parts.includes('alt'),
+			handler
+		}
+
+		// Convert `meta` to `ctrl` for normal operating systems
+		if (!isMac && keybind.metaKey && !keybind.ctrlKey) {
+			keybind.metaKey = false
+			keybind.ctrlKey = true
+		}
+
+		return keybind
+	})
 }

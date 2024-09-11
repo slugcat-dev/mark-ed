@@ -1,9 +1,11 @@
 import { MarkdownParser, type MarkdownParserConfig } from './markdown'
 import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
+import { defaultInlineGrammar, defaultLineGrammar } from './grammar'
 import { defu } from './utils'
 
 export interface EditorConfig {
 	content: string
+	readonly: boolean
 	tabSize: number
 	hideMarks: boolean
 	keymap: Keymap
@@ -24,16 +26,26 @@ export interface Line {
 
 const defaultConfig: EditorConfig = {
 	content: '',
+	readonly: false,
 	tabSize: 2,
 	hideMarks: true,
 	keymap: defaultKeymap,
-	markdown: {}
+	markdown: {
+		lineGrammar: defaultLineGrammar,
+		inlineGrammar: defaultInlineGrammar
+	}
 }
 
 export class Editor {
 	private config: EditorConfig
 	private keymap: CompiledKeybind[]
 	private selection = this.getSelection()
+	private handlers = {
+		input: this.handleInput.bind(this),
+		key: this.handleKey.bind(this),
+		paste: this.handlePaste.bind(this),
+		selection: this.handleSelection.bind(this)
+	}
 	readonly root: HTMLElement
 	readonly markdown: MarkdownParser
 
@@ -62,6 +74,19 @@ export class Editor {
 		return this.root === document.activeElement
 	}
 
+	set readonly(readonly: boolean) {
+		if (readonly)
+			this.destroy()
+		else
+			this.setup()
+
+		this.config.readonly = readonly
+	}
+
+	get readonly(): boolean {
+		return this.config.readonly
+	}
+
 	/**
 	 * Create a new `Editor` instance.
 	 *
@@ -77,7 +102,6 @@ export class Editor {
 			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
-		// TODO: default config - what to merge - keybinds, grammar
 		this.config = defu(config, defaultConfig)
 		this.keymap = compileKeymap(this.config.keymap)
 		this.markdown = new MarkdownParser(this.config.markdown)
@@ -89,25 +113,31 @@ export class Editor {
 
 	private createEditorElement(): void {
 		this.root.classList.add('md-editor')
-		this.root.setAttribute('contenteditable', 'true')
 
 		// Important for whitespace formatting and to prevent the browser from replacing spaces with `&nbsp;`
 		this.root.style.whiteSpace = 'pre-wrap'
+		this.root.style.tabSize = this.config.tabSize.toString()
+
+		if (!this.config.readonly)
+			this.setup()
+	}
+
+	private setup(): void {
+		// Make the editor element editable
+		this.root.setAttribute('contenteditable', 'true')
 
 		// Prevent the rich formatting popup on iOS
 		// @ts-expect-error
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
 
-		this.root.style.tabSize = this.config.tabSize.toString()
-
 		// Add event listeners
-		this.root.addEventListener('input', (event) => this.handleInput(event))
-		this.root.addEventListener('compositionend', (event) => this.handleInput(event))
-		this.root.addEventListener('keydown', (event) => this.handleKey(event))
-		this.root.addEventListener('paste', (event) => this.handlePaste(event))
-		this.root.addEventListener('focus', () => this.handleSelection())
-		this.root.addEventListener('blur', () => this.handleSelection())
-		document.addEventListener('selectionchange', () => this.handleSelection())
+		this.root.addEventListener('input', this.handlers.input)
+		this.root.addEventListener('compositionend', this.handlers.input)
+		this.root.addEventListener('keydown', this.handlers.key)
+		this.root.addEventListener('paste', this.handlers.paste)
+		this.root.addEventListener('focus', this.handlers.selection)
+		this.root.addEventListener('blur', this.handlers.selection)
+		document.addEventListener('selectionchange', this.handlers.selection)
 	}
 
 	private handleInput(event?: Event): void {
@@ -502,15 +532,15 @@ export class Editor {
 	 * Unregister all event listeners and clean up the editor.
 	 */
 	destroy(): void {
-		this.root.removeEventListener('input', (event) => this.handleInput(event))
-		this.root.removeEventListener('compositionend', (event) => this.handleInput(event))
-		this.root.removeEventListener('keydown', (event) => this.handleKey(event))
-		this.root.removeEventListener('paste', (event) => this.handlePaste(event))
-		this.root.removeEventListener('focus', () => this.handleSelection())
-		this.root.removeEventListener('blur', () => this.handleSelection())
-		document.removeEventListener('selectionchange', () => this.handleSelection())
+		this.root.removeEventListener('input', this.handlers.input)
+		this.root.removeEventListener('compositionend', this.handlers.input)
+		this.root.removeEventListener('keydown', this.handlers.key)
+		this.root.removeEventListener('paste', this.handlers.paste)
+		this.root.removeEventListener('focus', this.handlers.selection)
+		this.root.removeEventListener('blur', this.handlers.selection)
+		document.removeEventListener('selectionchange', this.handlers.selection)
 
-		// Make the editor no longer editable
+		// Make the editor element no longer editable
 		this.root.removeAttribute('contenteditable')
 
 		// @ts-expect-error

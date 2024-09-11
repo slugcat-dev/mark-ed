@@ -1,5 +1,4 @@
 import { defaultLineGrammar, defaultInlineGrammar, type LineGrammar, type InlineGrammar, type BlockRule } from './grammar'
-import { defu } from './utils'
 
 export interface MarkdownParserConfig {
 	lineGrammar: LineGrammar
@@ -13,8 +12,8 @@ export class MarkdownParser {
 	lineTypes: string[] = []
 
 	constructor(config?: Partial<MarkdownParserConfig>) {
-		this.lineGrammar = defu(config?.lineGrammar ?? {}, defaultLineGrammar)
-		this.inlineGrammar = defu(config?.inlineGrammar ?? {}, defaultInlineGrammar)
+		this.lineGrammar = config?.lineGrammar ?? defaultLineGrammar
+		this.inlineGrammar = config?.inlineGrammar ?? defaultInlineGrammar
 	}
 
 	parse(lines: string[]): string[] {

@@ -1,34 +1,24 @@
-# EditorConfig
-- custom markdown grammar
-
-# Other
+# TODO
 - History
-- code highlight
-- block acc rules
+- Code highlighting
 
+- `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
+
+- docs
 - default eslint
-
-- deployment / installation section in readme
-- Hosted version: https://unpkg.com/@slugcat-dev/mark-ed@latest
-
-- mention in readme that you need css
-
-# Resources
-- https://github.com/markedjs/marked/blob/master/src/Renderer.ts
-
-- https://codemirror.net/docs/guide/
-- https://github.com/codemirror/state/blob/main/src/state.ts
-- https://github.com/codemirror/view/blob/main/src/editorview.ts
-
-- https://github.com/Wilfred/difftastic/wiki/Line-Based-Diffs
+- deployment script
 
 # Markdown
-TODO:
+https://github.github.com/gfm/
+
 - Lists
 - Task list items
-
-May be included later (in that order):
+- Entity and numeric character references
 - Links
 - Images
 - Link reference definitions
 - Tables
+
+# README
+- How to install
+- https://unpkg.com/package@latest
