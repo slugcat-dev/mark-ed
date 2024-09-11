@@ -163,10 +163,13 @@ export class MarkdownParser {
 							}
 
 							// Find a matching rule for the delimiter
+							const openLen = stack[stackPointer].len
 							const rule = Object.values(this.inlineGrammar)
 								.filter(rule => 'delimiter' in rule)
 								.sort((a, b) => b.length - a.length)
-								.find(rule => rule.delimiter.includes(delimiter) && len >= rule.length)
+								.find(rule => rule.delimiter.includes(delimiter)
+									&& len >= rule.length
+									&& openLen >= rule.length)
 
 							if (rule) {
 								res = rule.replace(delimiter.repeat(rule.length), res)

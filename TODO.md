@@ -13,9 +13,6 @@
 
 - mention in readme that you need css
 
-# Bugs
-- inserts charsfor opening delimiter when closing is found
-
 # Resources
 - https://github.com/markedjs/marked/blob/master/src/Renderer.ts
 
