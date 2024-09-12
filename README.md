@@ -4,7 +4,7 @@
 **[DEMO](https://doublekekse.dev/mark-ed)**
 
 ## Installation
-You can install the package from NPM:
+Install the package from NPM:
 
 ```sh
 npm install @slugcat-dev/mark-ed
@@ -30,10 +30,9 @@ import { Editor } from '@slugcat-dev/mark-ed'
 const editor = new Editor('editor')
 ```
 
-You can then access the content of the editor with `editor.content` and add event listeners to `editor.root`.
+Access the content of the editor with `editor.content` and add event listeners to `editor.root`.
 
 _The code for the demo is in the [`dev`](https://github.com/slugcat-dev/mark-ed/tree/main/dev) directory of this repository._
-
 
 ### Recommended attributes for the editor element
 ```ini
@@ -44,7 +43,7 @@ autocorrect="off"
 autocapitalize="off"
 ```
 
-You can adjust these as you need.
+Adjust these as you need.
 
 ## Styling
 Note that you need to properly style the editor if you want it to look good. CSS classes are prefixed with `md-`. Take a look at [`dev/style.css`](https://github.com/slugcat-dev/mark-ed/blob/main/dev/style.css) for a basic example.

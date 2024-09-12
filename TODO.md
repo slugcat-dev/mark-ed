@@ -1,6 +1,7 @@
 # TODO
 - History
 - Code highlighting
+- custom cursor
 
 - `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
 

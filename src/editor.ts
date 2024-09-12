@@ -93,7 +93,7 @@ export class Editor {
 	 * @param root - The element on which the editor will be rendered.
 	 * @param config - The configuration for the editor.
 	 */
-	constructor(root: HTMLElement | string, config: Partial<EditorConfig>) {
+	constructor(root: HTMLElement | string, config?: Partial<EditorConfig>) {
 		const element = typeof root === 'string'
 			? document.getElementById(root)
 			: root
