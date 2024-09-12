@@ -12,10 +12,8 @@ npm install @slugcat-dev/mark-ed
 
 If you need a hosted version instead, you can use unpkg:
 
-```html
-<script type="module">
-	import { Editor } from 'https://unpkg.com/@slugcat-dev/mark-ed@latest'
-</script>
+```ts
+import { Editor } from 'https://unpkg.com/@slugcat-dev/mark-ed@latest'
 ```
 
 ## Usage
@@ -26,7 +24,7 @@ You can then create your own editor like this:
 ```
 
 ```ts
-import { Editor } from 'mark-ed'
+import { Editor } from '@slugcat-dev/mark-ed'
 
 // Create the Editor instance
 const editor = new Editor('editor')
