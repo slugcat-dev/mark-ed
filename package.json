@@ -8,6 +8,7 @@
   },
   "keywords": [
     "editor",
+    "markdown-editor",
     "markdown"
   ],
   "main": "./dist/index.js",

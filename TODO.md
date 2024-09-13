@@ -7,7 +7,7 @@
 
 - docs
 - default eslint
-- deployment script
+- readme in demo
 
 # Markdown
 https://github.github.com/gfm/

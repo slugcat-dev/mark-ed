@@ -60,5 +60,6 @@ npm run dev
 ```
 
 ## Thanks to these Projects
-https://github.com/jefago/tiny-markdown-editor \
-https://github.com/lezer-parser/markdown
+https://github.com/jefago/tiny-markdown-editor/ \
+https://github.com/codemirror/ \
+https://github.com/lezer-parser/markdown/
