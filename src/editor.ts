@@ -191,6 +191,12 @@ export class Editor {
 	 * Read back the content from the DOM
 	 */
 	private updateLines(): void {
+		// Remove elements that aren't editor lines
+		for (const lineElm of this.root.children) {
+			if (!lineElm.classList.contains('md-line'))
+				lineElm.remove()
+		}
+
 		if (!this.root.firstChild)
 			this.root.innerHTML = '<div class="md-line"><br></div>'
 

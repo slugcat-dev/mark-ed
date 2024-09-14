@@ -1,11 +1,12 @@
 {
   "name": "@slugcat-dev/mark-ed",
   "type": "module",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "In-browser editor that supports Markdown formatting",
   "homepage": "https://doublekekse.dev/mark-ed",
   "repository": {
-    "url": "github:slugcat-dev/mark-ed"
+    "type": "git",
+    "url": "git+https://github.com/slugcat-dev/mark-ed.git"
   },
   "keywords": [
     "editor",
