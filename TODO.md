@@ -8,7 +8,6 @@
 - docs
 - default eslint
 - readme in demo
-- link to docs next to link to demo
 
 # Markdown
 https://github.github.com/gfm/

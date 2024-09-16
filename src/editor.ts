@@ -55,10 +55,6 @@ export class Editor {
 	 */
 	lines: string[] = []
 
-	get lineTypes(): string[] {
-		return this.markdown.lineTypes
-	}
-
 	get content(): string {
 		return this.lines.join('\n')
 	}

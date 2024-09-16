@@ -1,10 +1,10 @@
 # mark-ed
 **`mark-ed`** is a lightweight (zero-dependency) in-browser editor that supports Markdown formatting.
 
-**[DEMO](https://doublekekse.dev/mark-ed)**
+**[DEMO](https://doublekekse.dev/mark-ed)** • **[DOCS](https://github.com/slugcat-dev/mark-ed/wiki)**
 
 ## Installation
-Install the package from NPM:
+Install the package from npm:
 
 ```sh
 npm install @slugcat-dev/mark-ed
