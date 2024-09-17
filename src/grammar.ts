@@ -203,7 +203,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 	Emphasis: {
 		delimiter: '*_',
 		length: 1,
-		replace: (delimiter: string, text: string) => `<em><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></em>`,
+		replace: (delimiter: string, text: string) => `<i><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></i>`,
 	},
 	StrongEmphasis: {
 		delimiter: '*',
@@ -213,11 +213,11 @@ export const defaultInlineGrammar: InlineGrammar = {
 	Underline: {
 		delimiter: '_',
 		length: 2,
-		replace: (delimiter: string, text: string) => `<ins><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></ins>`,
+		replace: (delimiter: string, text: string) => `<u><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></u>`,
 	},
 	Strikethrough: {
 		delimiter: '~',
 		length: 2,
-		replace: (delimiter: string, text: string) => `<del><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></del>`,
+		replace: (delimiter: string, text: string) => `<s><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></s>`,
 	}
 }
