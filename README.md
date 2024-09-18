@@ -1,6 +1,6 @@
 # mark-ed
 
-![](demo.gif)
+![demo.gif](https://github.com/user-attachments/assets/3dc49cfc-9e57-482c-b06f-787269aa5a95)
 
 **`mark-ed`** is a lightweight (zero-dependency, less than 50 kB) in-browser editor that supports Markdown formatting, implemented in TypeScript.
 
@@ -36,7 +36,7 @@ import { Editor } from '@slugcat-dev/mark-ed'
 const editor = new Editor('editor')
 ```
 
-Access the content of the editor with `editor.content` and add event listeners to `editor.root`. See the docs for more. You can also look at the code for the demo in the [`dev`](https://github.com/slugcat-dev/mark-ed/tree/main/dev) directory.
+Access the content of the editor with `editor.content` and add event listeners to `editor.root`. Refer to the documentation for additional information. You can also take a look at the code for the demo in the [`dev`](https://github.com/slugcat-dev/mark-ed/tree/main/dev) directory.
 
 If you need a hosted version instead, you can use unpkg:
 
