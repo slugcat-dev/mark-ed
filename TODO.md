@@ -2,12 +2,11 @@
 - History
 - Code highlighting
 - custom cursor
+- change event
 
 - `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
 
-- docs
 - default eslint
-- readme in demo
 
 # Markdown
 https://github.github.com/gfm/

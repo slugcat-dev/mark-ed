@@ -12,14 +12,22 @@ body {
 
 .md-editor {
 	padding: .5rem;
+	font-size: .875rem;
+	line-height: 1.25rem;
 	border: 1px solid #ccc;
 	border-radius: .25rem;
 }
 
+.md-editor:has(> .md-line:first-child > br)::before {
+  content: attr(data-placeholder);
+	position: absolute;
+  color: gray;
+  pointer-events: none;
+	user-select: none;
+}
+
 .md-line {
 	position: relative;
-	line-height: 1.25rem;
-	font-size: .875rem;
 }
 
 .md-mark {

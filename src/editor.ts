@@ -47,6 +47,9 @@ export class Editor {
 		selection: this.handleSelection.bind(this)
 	}
 	readonly root: HTMLElement
+	/**
+	 * The MarkdownParser instance the editor uses.
+	 */
 	readonly markdown: MarkdownParser
 
 	/**
@@ -66,6 +69,9 @@ export class Editor {
 		this.updateDOM(Editor.selectionFrom(content.length))
 	}
 
+	/**
+	 * Get if the editor is focused.
+	 */
 	get focused(): boolean {
 		return this.root === document.activeElement
 	}
@@ -431,7 +437,7 @@ export class Editor {
 	/**
 	 * Set the text selection within the editor.
 	 *
-	 * @param selection - An object specifying the new `start` and `end` positions.
+	 * @param selection - An object specifying the new `start` or `end` position.
 	 * @param collapse - If true, collapses the selection to the specified `start` or `end` position,
 	 * otherwise extends the selection.
 	 */
