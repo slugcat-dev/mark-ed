@@ -7,6 +7,7 @@ export interface EditorConfig {
 	content: string
 	readonly: boolean
 	tabSize: number
+	indentWithSpaces: boolean
 	hideMarks: boolean
 	keymap: Keymap
 	markdown: Partial<MarkdownParserConfig>
@@ -27,8 +28,9 @@ export interface Line {
 const defaultConfig: EditorConfig = {
 	content: '',
 	readonly: false,
-	tabSize: 2,
-	hideMarks: true,
+	tabSize: 4,
+	indentWithSpaces: false,
+	hideMarks: false,
 	keymap: defaultKeymap,
 	markdown: {
 		lineGrammar: defaultLineGrammar,
@@ -37,7 +39,6 @@ const defaultConfig: EditorConfig = {
 }
 
 export class Editor {
-	private config: EditorConfig
 	private keymap: CompiledKeybind[]
 	private selection = this.getSelection()
 	private handlers = {
@@ -47,6 +48,7 @@ export class Editor {
 		selection: this.handleSelection.bind(this)
 	}
 	readonly root: HTMLElement
+	readonly config: EditorConfig
 	/**
 	 * The MarkdownParser instance the editor uses.
 	 */
@@ -104,7 +106,7 @@ export class Editor {
 			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
-		this.config = defu(config, defaultConfig)
+		this.config = Object.freeze(defu(config, defaultConfig))
 		this.keymap = compileKeymap(this.config.keymap)
 		this.markdown = new MarkdownParser(this.config.markdown)
 
@@ -174,13 +176,20 @@ export class Editor {
 		if (!event.clipboardData)
 			return
 
-		this.insertAtSelection(event.clipboardData.getData('text/plain'))
+		let text = event.clipboardData.getData('text/plain')
+
+		// TODO: only replace tabs / spaces at start of line
+		if (this.config.indentWithSpaces)
+			text = text.replaceAll('\t', ' '.repeat(this.config.tabSize))
+
+		this.insertAtSelection(text)
 	}
 
-	private handleSelection(): void {
+	private handleSelection(event: Event): void {
 		const selection = this.getSelection()
 
-		if (selection.start === this.selection.start && selection.end === this.selection.end)
+		// TODO: only when kbd
+		if (selection.start === this.selection.start && selection.end === this.selection.end && !(event instanceof FocusEvent))
 			return
 
 		this.selection = selection

@@ -2,6 +2,8 @@ import { Editor } from '../src/index'
 
 const editor = new Editor('editor', {
 	content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`',
+	tabSize: 2,
+	hideMarks: true,
 	keymap: {
 		'Alt ArrowUp': () => moveLine(true),
 		'Alt ArrowDown': () => moveLine(false),

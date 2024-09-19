@@ -45,7 +45,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const mark = match.groups!.mark
 			const end = match.groups!.end
 
-			return `<div class="md-hr">${indent}<span class="md-mark">${mark}</span>${end}</div>`
+			return `${indent}<div class="md-hr"><span class="md-mark">${mark}</span>${end}</div>`
 		}
 	},
 	ATXHeading: {
@@ -56,7 +56,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const text = parser.parseInline(match.groups!.text)
 			const level = mark.length - 1
 
-			return `<h${level} class="md-heading">${indent}<span class="md-mark">${mark}</span>${text}</h${level}>`
+			return `${indent}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${text}</h${level}>`
 		}
 	},
 	CodeBlock: {
@@ -93,14 +93,21 @@ export const defaultLineGrammar: LineGrammar = {
 		line: (line) => `<code class="md-code-block">${fixLine(line)}</code>`
 	},
 	BlockQuote: {
-		regex: /^(?<indent>\s*)(?<mark>>)(?<text>.*)/,
+		regex: /^(?<indent>\s*)>(?<text>.*)/,
 		replace(match, parser) {
 			const indent = match.groups!.indent
-			const mark = match.groups!.mark
 			const text = parser.parseInline(match.groups!.text)
 
-			return `<div class="md-quote">${indent}<span class="md-mark">${mark}</span>${text}</div>`
+			return `${indent}<div class="md-quote"><span class="md-mark">&gt;</span>${text}</div>`
 		}
+	},
+	UnorderedList: {
+		regex: /^\s*[-+*]\s.*/,
+		replace: (match, parser) => parser.parseInline(match[0])
+	},
+	OrderedList: {
+		regex: /^\s*\d+[).]\s.*/,
+		replace: (match, parser) => parser.parseInline(match[0])
 	}
 }
 
@@ -203,21 +210,25 @@ export const defaultInlineGrammar: InlineGrammar = {
 	Emphasis: {
 		delimiter: '*_',
 		length: 1,
-		replace: (delimiter: string, text: string) => `<i><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></i>`,
+		replace: inline('i'),
 	},
 	StrongEmphasis: {
 		delimiter: '*',
 		length: 2,
-		replace: (delimiter: string, text: string) => `<b><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></b>`,
+		replace: inline('b'),
 	},
 	Underline: {
 		delimiter: '_',
 		length: 2,
-		replace: (delimiter: string, text: string) => `<u><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></u>`,
+		replace: inline('u'),
 	},
 	Strikethrough: {
 		delimiter: '~',
 		length: 2,
-		replace: (delimiter: string, text: string) => `<s><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></s>`,
+		replace: inline('s'),
 	}
+}
+
+function inline(tag: string): (delimiter: string, text: string) => string {
+	return (delimiter: string, text: string) => `<${tag}><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></${tag}>`
 }

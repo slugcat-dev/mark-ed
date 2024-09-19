@@ -9,7 +9,7 @@
 ## Features
 - **Rich Editing:** Seemless in-editor formatting makes editing more immersive than having a split view between editor and preview, like most Markdown editors have.
 
-- **Minimal Distractions:** Markdown syntax is automatically hidden where you don't edit to reduce the visual noise, like in Obsidian.
+- **Minimal Distractions:** Markdown syntax can be automatically hidden where you don't edit to reduce the visual noise, like in Obsidian.
 
 - **Easy to Use:** Embed the editor on your website with only three lines of code!
 

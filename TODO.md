@@ -3,8 +3,10 @@
 - Code highlighting
 - custom cursor
 - change event
+- reconfigure
 
 - `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
+- scrollIntoView
 
 - default eslint
 
