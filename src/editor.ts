@@ -28,7 +28,7 @@ export interface Line {
 const defaultConfig: EditorConfig = {
 	content: '',
 	readonly: false,
-	tabSize: 4,
+	tabSize: 2,
 	indentWithSpaces: false,
 	hideMarks: false,
 	keymap: defaultKeymap,
@@ -106,7 +106,7 @@ export class Editor {
 			throw Error('Could not create editor: Element does not exist')
 
 		this.root = element
-		this.config = Object.freeze(defu(config, defaultConfig))
+		this.config = defu(config, defaultConfig)
 		this.keymap = compileKeymap(this.config.keymap)
 		this.markdown = new MarkdownParser(this.config.markdown)
 
@@ -139,8 +139,6 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
-		this.root.addEventListener('focus', this.handlers.selection)
-		this.root.addEventListener('blur', this.handlers.selection)
 		document.addEventListener('selectionchange', this.handlers.selection)
 	}
 
@@ -176,20 +174,29 @@ export class Editor {
 		if (!event.clipboardData)
 			return
 
-		let text = event.clipboardData.getData('text/plain')
+		const text = event.clipboardData.getData('text/plain')
+		const indentSpaces = ' '.repeat(this.config.tabSize)
+		const lines = []
 
-		// TODO: only replace tabs / spaces at start of line
-		if (this.config.indentWithSpaces)
-			text = text.replaceAll('\t', ' '.repeat(this.config.tabSize))
+		// Convert indentation
+		for (const line of text.split(/\r\n|\r|\n/)) {
+			const lineIndent = line.match(/^[\t ]*/)![0]
+			const newIndent = (
+				this.config.indentWithSpaces
+				? lineIndent.replaceAll('\t', indentSpaces)
+				: lineIndent.replaceAll(indentSpaces, '\t')
+			)
 
-		this.insertAtSelection(text)
+			lines.push(newIndent + line.substring(lineIndent.length))
+		}
+
+		this.insertAtSelection(lines.join('\n'))
 	}
 
-	private handleSelection(event: Event): void {
+	private handleSelection(): void {
 		const selection = this.getSelection()
 
-		// TODO: only when kbd
-		if (selection.start === this.selection.start && selection.end === this.selection.end && !(event instanceof FocusEvent))
+		if (selection.start === this.selection.start && selection.end === this.selection.end)
 			return
 
 		this.selection = selection
@@ -553,8 +560,6 @@ export class Editor {
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
-		this.root.removeEventListener('focus', this.handlers.selection)
-		this.root.removeEventListener('blur', this.handlers.selection)
 		document.removeEventListener('selectionchange', this.handlers.selection)
 
 		// Make the editor element no longer editable

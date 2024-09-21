@@ -39,17 +39,17 @@ export interface InlineGrammar {
 
 export const defaultLineGrammar: LineGrammar = {
 	ThematicBreak: {
-		regex: /^(?<indent>\s*)(?<mark>(?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(?<end>\s*)$/,
+		regex: /^(?<spaceBefore>\s*)(?<mark>(?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(?<spaceAfter>\s*)$/,
 		replace(match) {
-			const indent = match.groups!.indent
+			const spaceBefore = match.groups!.indent
+			const spaceAfter = match.groups!.end
 			const mark = match.groups!.mark
-			const end = match.groups!.end
 
-			return `${indent}<div class="md-hr"><span class="md-mark">${mark}</span>${end}</div>`
+			return `${spaceBefore}<div class="md-hr"><span class="md-mark">${mark}</span></div>${spaceAfter}`
 		}
 	},
 	ATXHeading: {
-		regex: /^(?<indent>\s*)(?<mark>#{1,6}\s)(?<text>.*)$/,
+		regex: /^(?<indent>[\t ]*)(?<mark>#{1,6} )(?<text>.*)$/,
 		replace(match, parser) {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
@@ -61,7 +61,7 @@ export const defaultLineGrammar: LineGrammar = {
 	},
 	CodeBlock: {
 		open(line) {
-			const match = /^(?<indent>\s*)(?<mark>`{3,})(?<space>\s*)(?<lang>[^\s`]*)(?<rest>[^`]*)$/.exec(line)
+			const match = /^(?<indent>[\t ]*)(?<mark>`{3,})(?<space>\s*)(?<lang>[^\s`]*)(?<rest>[^`]*)$/.exec(line)
 
 			if (!match)
 				return false
@@ -79,21 +79,22 @@ export const defaultLineGrammar: LineGrammar = {
 		},
 		close(line, openMatch) {
 			const openMark = openMatch.groups!.mark
-			const match = RegExp(`^(?<indent>\\s*)(?<mark>\`{${openMark.length},}\\s*)$`).exec(line)
+			const match = RegExp(`^(?<spaceBefore>\s*)(?<mark>\`{${openMark.length},})(?<spaceAfter>\\s*)$`).exec(line)
 
 			if (!match)
 				return false
 
-			const indent = match.groups!.indent
+			const spaceBefore = match.groups!.spaceBefore
+			const spaceAfter = match.groups!.spaceAfter
 			const mark = match.groups!.mark
 
-			return `<code class="md-code-block">${indent}<span class="md-mark">${mark}</span></code>`
+			return `<code class="md-code-block">${spaceBefore}<span class="md-mark">${mark}</span>${spaceAfter}</code>`
 		},
 		// TODO: pass lines to a code highlighter
 		line: (line) => `<code class="md-code-block">${fixLine(line)}</code>`
 	},
 	BlockQuote: {
-		regex: /^(?<indent>\s*)>(?<text>.*)/,
+		regex: /^(?<indent>[\t ]*)>(?<text>.*)/,
 		replace(match, parser) {
 			const indent = match.groups!.indent
 			const text = parser.parseInline(match.groups!.text)
@@ -102,11 +103,11 @@ export const defaultLineGrammar: LineGrammar = {
 		}
 	},
 	UnorderedList: {
-		regex: /^\s*[-+*]\s.*/,
+		regex: /^[\t ]*[-+*] .*/,
 		replace: (match, parser) => parser.parseInline(match[0])
 	},
 	OrderedList: {
-		regex: /^\s*\d+[).]\s.*/,
+		regex: /^[\t ]*\d+[).] .*/,
 		replace: (match, parser) => parser.parseInline(match[0])
 	}
 }
@@ -121,9 +122,9 @@ export const defaultInlineGrammar: InlineGrammar = {
 		regex: /^<([a-z][a-z\d+.-]{1,31}:[^\s<>]+|[a-z\d](?:[\w!#$%&'*+\-./=?^`{|}~]*[a-z\d])?(@)[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?)*)>/i,
 		replace(match: Match) {
 			const link = escapeHTML(match[1])
-			const isEmail = match[2] === '@' ? 'mailto:' : ''
+			const isEmail = match[2] === '@'
 
-			return `<span><span class="md-mark">&lt;</span><a href=${isEmail + link}>${link}</a><span class="md-mark">&gt;</span></span>`
+			return `<span><span class="md-mark">&lt;</span><a href=${(isEmail ? 'mailto:' : '') + link}>${link}</a><span class="md-mark">&gt;</span></span>`
 		}
 	},
 	InlineCode: {
@@ -193,12 +194,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 					break
 			}
 
-			const url = urlStart + urlEnd.substring(0, end)
-
-			// TODO: when implementing masked links
-			// https://github.com/lezer-parser/markdown/blob/main/src/extension.ts#L216
-
-			return [url]
+			return [urlStart + urlEnd.substring(0, end)]
 		},
 		replace: (match: Match) => `<a href="${escapeHTML(match[0])}">${escapeHTML(match[0])}</a>`
 	},

@@ -69,6 +69,7 @@ body {
 
 .md-subtext {
 	font-size: .75rem;
+	line-height: 1rem;
 	font-weight: bold;
 	color: #666;
 }
