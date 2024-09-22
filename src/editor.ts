@@ -40,12 +40,16 @@ const defaultConfig: EditorConfig = {
 
 export class Editor {
 	private keymap: CompiledKeybind[]
-	private selection = this.getSelection()
 	private handlers = {
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
 		selection: this.handleSelection.bind(this)
+	}
+	private prevSelection = {
+		start: 0,
+		end: 0,
+		focused: false
 	}
 	readonly root: HTMLElement
 	readonly config: EditorConfig
@@ -196,10 +200,16 @@ export class Editor {
 	private handleSelection(): void {
 		const selection = this.getSelection()
 
-		if (selection.start === this.selection.start && selection.end === this.selection.end)
+		if (
+			this.prevSelection.start === selection.start
+			&& this.prevSelection.end === selection.end
+			&& this.prevSelection.focused === this.focused
+		)
 			return
 
-		this.selection = selection
+		this.prevSelection.start = selection.start
+		this.prevSelection.end = selection.end
+		this.prevSelection.focused = this.focused
 
 		for (const lineElm of this.root.children)
 			this.hideMarks(lineElm, selection)
