@@ -41,8 +41,8 @@ export const defaultLineGrammar: LineGrammar = {
 	ThematicBreak: {
 		regex: /^(?<spaceBefore>\s*)(?<mark>(?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(?<spaceAfter>\s*)$/,
 		replace(match) {
-			const spaceBefore = match.groups!.indent
-			const spaceAfter = match.groups!.end
+			const spaceBefore = match.groups!.spaceBefore
+			const spaceAfter = match.groups!.spaceAfter
 			const mark = match.groups!.mark
 
 			return `${spaceBefore}<div class="md-hr"><span class="md-mark">${mark}</span></div>${spaceAfter}`
@@ -100,6 +100,17 @@ export const defaultLineGrammar: LineGrammar = {
 			const text = parser.parseInline(match.groups!.text)
 
 			return `${indent}<div class="md-quote"><span class="md-mark">&gt;</span>${text}</div>`
+		}
+	},
+	TaskList: {
+		regex: /^(?<indent>[\t ]*)(?<mark>[-+*] \[[x ]\] )(?<text>.*)/i,
+		replace: (match, parser) => {
+			const indent = match.groups!.indent
+			const mark = match.groups!.mark
+			const checkbox = `<input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}>`
+			const text = parser.parseInline(match.groups!.text)
+
+			return `${indent}<span class="md-task"><span class="md-mark">${mark[0]} [<span style="font-family: monospace;">${mark[3]}</span>]</span>${checkbox}</span> ${text}`
 		}
 	},
 	UnorderedList: {

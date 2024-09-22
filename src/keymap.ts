@@ -133,13 +133,16 @@ function insertNewlineAndIndent(editor: Editor): void {
 	if (/BlockQuote|List/.test(lineType)) {
 		const regex = lineType === 'OrderedList'
 			? /^(?<indent>[\t ]*)(?<num>\d+)(?<mark>[).] )/
-			: /^(?<indent>[\t ]*)(?<mark>> ?|[-+*] )/
+			: /^(?<indent>[\t ]*)(?<mark>> ?|[-+*] \[[x ]\] |[-+*] )/i
 
 		const parts = line.text.match(regex)!
 		const indent = parts.groups!.indent
-		const mark = lineType === 'OrderedList'
-			? Number.parseInt(parts.groups!.num) + 1 + parts.groups!.mark
-			: parts.groups!.mark
+		let mark = parts.groups!.mark
+
+		if (lineType === 'OrderedList')
+			mark = Number.parseInt(parts.groups!.num) + 1 + mark
+		else if (lineType === 'TaskList')
+			mark = mark.replace(/x/i, ' ')
 
 		continueMarkup(editor, selection, line, indent, mark)
 	} else {
@@ -149,7 +152,7 @@ function insertNewlineAndIndent(editor: Editor): void {
 	}
 }
 
-function continueMarkup(editor: Editor, selection: EditorSelection, line: Line, indent: string, mark: string) {
+function continueMarkup(editor: Editor, selection: EditorSelection, line: Line, indent: string, mark: string): void {
 	const text = line.text.substring(indent.length + mark.length)
 
 	if (text.length > 0)
@@ -162,7 +165,7 @@ function continueMarkup(editor: Editor, selection: EditorSelection, line: Line, 
 	}
 }
 
-function selectLineStart(editor: Editor, collapse: boolean) {
+function selectLineStart(editor: Editor, collapse: boolean): void {
 	const selection = editor.getSelection()
 	const line = editor.lineAt(selection.start)
 	const lineType = editor.markdown.lineTypes[line.num]
@@ -170,7 +173,7 @@ function selectLineStart(editor: Editor, collapse: boolean) {
 
 	// Move the cursor to the start of a list item or block quote
 	if (/BlockQuote|List/.test(lineType)) {
-		const from = line.from + line.text.match(/^[\t ]*(?:> ?|[-+*] |\d+[).] )/)![0].length
+		const from = line.from + line.text.match(/^[\t ]*(?:> ?|[-+*] \[[x ]\] |[-+*] |\d+[).] )/i)![0].length
 
 		if (selection.start > from)
 			newStart = from

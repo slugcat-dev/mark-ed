@@ -44,6 +44,8 @@ export class Editor {
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
+		pointerdown: this.handlePointerdown.bind(this),
+		click: this.handleClick.bind(this),
 		selection: this.handleSelection.bind(this)
 	}
 	private prevSelection = {
@@ -143,6 +145,8 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
+		this.root.addEventListener('pointerdown', this.handlers.pointerdown)
+		this.root.addEventListener('click', this.handlers.click)
 		document.addEventListener('selectionchange', this.handlers.selection)
 	}
 
@@ -195,6 +199,44 @@ export class Editor {
 		}
 
 		this.insertAtSelection(lines.join('\n'))
+	}
+
+	private handlePointerdown(event: Event): void {
+		this.toggleCheckbox(event, false)
+	}
+
+	private handleClick(event: Event): void {
+		this.toggleCheckbox(event)
+	}
+
+	/**
+	 * Toggle TaskList checkboxes
+	 */
+	private toggleCheckbox(event: Event, act = true): void {
+		if (!(event.target instanceof HTMLInputElement && event.target.matches('.md-task input[type="checkbox"]')))
+			return
+
+		event.preventDefault()
+
+		if (!act)
+			return
+
+		const checkboxPos = this.getElementOffset(event.target as Element)
+		const line = this.lineAt(checkboxPos)
+		const pos = checkboxPos - line.from - 2
+		const text = line.text
+
+		console.log(pos)
+
+		this.lines[line.num] = text.substring(0, pos)
+			+ (text[pos] === ' ' ? 'x' : ' ')
+			+ text.substring(pos + 1)
+
+		if (!this.focused) {
+			this.root.focus()
+			this.updateDOM(Editor.selectionFrom(line.end))
+		} else
+			this.updateDOM()
 	}
 
 	private handleSelection(): void {
@@ -348,11 +390,12 @@ export class Editor {
 			// To not hardcode md-line here, add one for each direct child of the editor instead
 			if (node.parentElement === this.root)
 				offset++
-			else if (node.nodeType === Node.TEXT_NODE) {
+			else {
 				if (isTarget(node))
 						break
 
-				offset += node.textContent?.length ?? 0
+				if (node.nodeType === Node.TEXT_NODE)
+					offset += node.textContent?.length ?? 0
 			}
 		}
 
@@ -570,6 +613,8 @@ export class Editor {
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
+		this.root.removeEventListener('pointerdown', this.handlers.pointerdown)
+		this.root.removeEventListener('click', this.handlers.click)
 		document.removeEventListener('selectionchange', this.handlers.selection)
 
 		// Make the editor element no longer editable

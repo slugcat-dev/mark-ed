@@ -2,9 +2,10 @@
 
 ![demo.gif](https://github.com/user-attachments/assets/3dc49cfc-9e57-482c-b06f-787269aa5a95)
 
-**`mark-ed`** is a lightweight (zero-dependency, less than 60 kB) in-browser editor that supports Markdown formatting, implemented in TypeScript.
+**`mark-ed`** is a lightweight (zero-dependency, less than 20 kB minified) in-browser editor that supports Markdown formatting, implemented in TypeScript.
 
 ### [DEMO](https://doublekekse.dev/mark-ed) • [DOCS](https://github.com/slugcat-dev/mark-ed/wiki)
+<br>
 
 ## Features
 - **Rich Editing:** Seemless in-editor formatting makes editing more immersive than having a split view between editor and preview, like most Markdown editors have.

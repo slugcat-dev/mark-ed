@@ -19,10 +19,10 @@ body {
 }
 
 .md-editor:has(> .md-line:only-child > br)::before {
-  content: attr(data-placeholder);
+	content: attr(data-placeholder);
 	position: absolute;
-  color: gray;
-  pointer-events: none;
+	color: gray;
+	pointer-events: none;
 	user-select: none;
 }
 
@@ -50,7 +50,7 @@ body {
 .md-hr {
 	display: inline-block;
 
-	&:not(:has(.md-mark:not(.md-hidden)))::before {
+	&:has(.md-mark.md-hidden)::before {
 		content: '';
 		position: absolute;
 		top: 50%;
@@ -131,5 +131,20 @@ body {
 		height: calc(1.25rem + 2px);
 		background-color: #ccc;
 		border-radius: .125rem;
+	}
+}
+
+.md-task {
+	input {
+		position: relative;
+		top: .125rem;
+		width: .875rem;
+		height: .875rem;
+		margin: 0;
+		margin-inline-end: .25rem;
+	}
+
+	&:has(.md-mark:not(.md-hidden)) input {
+		display: none;
 	}
 }

@@ -14,13 +14,12 @@
 			spellcheck="false"
 			autocorrect="off"
 			autocapitalize="off"
+			data-placeholder="Write something..."
 		></div>
 		<script type="module">
-			import { Editor } from 'https://unpkg.com/@slugcat-dev/mark-ed@latest'
+			import { Editor } from 'https://esm.run/@slugcat-dev/mark-ed'
 
-			const editor = new Editor('editor', {
-				content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`',
-			})
+			const editor = new Editor('editor')
 		</script>
 	</body>
 </html>

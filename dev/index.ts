@@ -1,7 +1,7 @@
 import { Editor } from '../src/index'
 
 const editor = new Editor('editor', {
-	content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`',
+	content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`\n- [x] Checkbox',
 	tabSize: 2,
 	hideMarks: true,
 	keymap: {
