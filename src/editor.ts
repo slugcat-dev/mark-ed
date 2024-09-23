@@ -51,7 +51,8 @@ export class Editor {
 	private prevSelection = {
 		start: 0,
 		end: 0,
-		focused: false
+		focused: false,
+		direction: 'forward'
 	}
 	readonly root: HTMLElement
 	readonly config: EditorConfig
@@ -71,7 +72,7 @@ export class Editor {
 	}
 
 	set content(content: string) {
-		this.lines = content.split(/\r\n|\r|\n/)
+		this.lines = this.convertIndentation(content)
 
 		// Update the DOM and move the cursor to the end
 		this.updateDOM(Editor.selectionFrom(content.length))
@@ -183,22 +184,8 @@ export class Editor {
 			return
 
 		const text = event.clipboardData.getData('text/plain')
-		const indentSpaces = ' '.repeat(this.config.tabSize)
-		const lines = []
 
-		// Convert indentation
-		for (const line of text.split(/\r\n|\r|\n/)) {
-			const lineIndent = line.match(/^[\t ]*/)![0]
-			const newIndent = (
-				this.config.indentWithSpaces
-				? lineIndent.replaceAll('\t', indentSpaces)
-				: lineIndent.replaceAll(indentSpaces, '\t')
-			)
-
-			lines.push(newIndent + line.substring(lineIndent.length))
-		}
-
-		this.insertAtSelection(lines.join('\n'))
+		this.insertAtSelection(text)
 	}
 
 	private handlePointerdown(event: Event): void {
@@ -221,7 +208,7 @@ export class Editor {
 		if (!act)
 			return
 
-		const checkboxPos = this.getElementOffset(event.target as Element)
+		const checkboxPos = this.getNodeOffset(event.target as Element)
 		const line = this.lineAt(checkboxPos)
 		const pos = checkboxPos - line.from - 2
 		const text = line.text
@@ -252,6 +239,7 @@ export class Editor {
 		this.prevSelection.start = selection.start
 		this.prevSelection.end = selection.end
 		this.prevSelection.focused = this.focused
+		this.prevSelection.direction = this.getSelectionDirection()
 
 		for (const lineElm of this.root.children)
 			this.hideMarks(lineElm, selection)
@@ -272,7 +260,7 @@ export class Editor {
 
 		this.lines = []
 
-		// Using this.root.textContent doesn't include line breaks
+		// Using this.root.textContent directly doesn't include line breaks
 		for (const lineElm of this.root.children)
 			this.lines.push(lineElm.textContent ?? '')
 	}
@@ -356,7 +344,7 @@ export class Editor {
 		// Currently requires CSS with complex selectors.
 
 		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
-			const start = this.getElementOffset(element)
+			const start = this.getNodeOffset(element)
 			const end = start + (element.textContent?.length ?? 0)
 			const marks = element.querySelectorAll('& > .md-mark')
 			const isVisible = selection.start <= end && selection.end >= start
@@ -365,41 +353,6 @@ export class Editor {
 				(mark as HTMLElement).classList.toggle('md-hidden', !(this.focused && isVisible))
 			})
 		})
-	}
-
-	/**
-	* Get the character offset of an element.
-	*/
-	private getElementOffset(target: Element): number {
-		const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
-		let node
-		let offset = 0
-
-		function isTarget(node: Node): boolean {
-			while (node) {
-				if (node === target)
-					return true
-
-				node = node.parentNode!
-			}
-
-			return false
-		}
-
-		while (node = walker.nextNode()) {
-			// To not hardcode md-line here, add one for each direct child of the editor instead
-			if (node.parentElement === this.root)
-				offset++
-			else {
-				if (isTarget(node))
-						break
-
-				if (node.nodeType === Node.TEXT_NODE)
-					offset += node.textContent?.length ?? 0
-			}
-		}
-
-		return offset - 1
 	}
 
 	/**
@@ -448,11 +401,38 @@ export class Editor {
 	 */
 	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
-		const content = this.content.slice(0, selection.start) + text + this.content.slice(selection.end)
+		const content = this.content.slice(0, selection.start)
+			+ this.convertIndentation(text).join('\n')
+			+ this.content.slice(selection.end)
 
-		this.lines = content.split(/\r\n|\r|\n/)
+		this.lines = content.split('\n')
 
 		this.updateDOM(Editor.selectionFrom(selection.start + text.length))
+	}
+
+	/**
+	 * Convert indentation to spaces or tabs, depending on how the editor is configured
+	 */
+	convertIndentation(text: string): string[] {
+		const indentSpaces = ' '.repeat(this.config.tabSize)
+		const lines = []
+
+		for (const line of text.split(/\r\n|\r|\n/)) {
+			const lineIndent = line.match(/^[\t ]*/)![0]
+
+			if (lineIndent.length > 0) {
+				const newIndent = (
+					this.config.indentWithSpaces
+					? lineIndent.replaceAll('\t', indentSpaces)
+					: lineIndent.replaceAll(indentSpaces, '\t')
+				)
+
+				lines.push(newIndent + line.substring(lineIndent.length))
+			} else
+				lines.push(line)
+		}
+
+		return lines
 	}
 
 	/**
@@ -468,32 +448,30 @@ export class Editor {
 			return { start: 0, end: 0 }
 
 		const range = selection.getRangeAt(0)
-		const toStartRange = range.cloneRange()
-		const toEndRange = range.cloneRange()
-
-		toStartRange.selectNodeContents(this.root)
-		toStartRange.setEnd(range.startContainer, range.startOffset)
-		toEndRange.selectNodeContents(this.root)
-		toEndRange.setEnd(range.endContainer, range.endOffset)
-
-		// Again, range.textContent would not include line breaks
-		function getRangeLength(range: Range): number {
-			const fragment = range.cloneContents()
-			const lines = fragment.querySelectorAll('div.md-line').length
-			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
-			let node
-			let length = 0
-
-			while (node = walker.nextNode())
-				length += (node as Text).length
-
-			return Math.max(0, length + lines - 1)
-		}
+		const start = this.getNodeOffset(range.startContainer) + range.startOffset
+		const end = this.getNodeOffset(range.endContainer) + range.endOffset
 
 		return {
-			start: Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length)),
-			end: Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
+			start: Math.max(0, Math.min(start, this.content.length)),
+			end: Math.max(0, Math.min(end, this.content.length))
 		}
+	}
+
+	private getSelectionDirection(): 'forward' | 'backward' {
+		const selection = document.getSelection()
+
+		if (!selection || selection.rangeCount === 0)
+			return 'forward'
+
+		if (selection.anchorNode === selection.focusNode)
+			return selection.anchorOffset < selection.focusOffset ? 'forward' : 'backward'
+
+		const range = document.createRange()
+
+		range.setStart(selection.anchorNode!, selection.anchorOffset)
+		range.setEnd(selection.focusNode!, selection.focusOffset)
+
+		return range.collapsed ? 'backward' : 'forward'
 	}
 
 	/**
@@ -528,6 +506,7 @@ export class Editor {
 		// Determine the correct new start and end positions
 		let start = 0
 		let end = 0
+		let direction = null
 
 		if (typeof selection === 'number')
 			start = end = selection
@@ -545,12 +524,17 @@ export class Editor {
 				if ('start' in selection) {
 					start = selection.start
 					end = Math.max(currentSelection.end, start)
+					direction = 'backward'
 				} else {
 					end = selection.end
 					start = Math.min(currentSelection.start, end)
+					direction = 'forward'
 				}
 			}
 		}
+
+		if (direction === null)
+			direction = this.prevSelection.direction
 
 		// Limit the selection to the bounds of the content
 		end = Math.max(0, Math.min(end, this.content.length))
@@ -596,13 +580,46 @@ export class Editor {
 		}
 
 		if (startNode && endNode) {
-			const range = document.createRange()
-
-			range.setStart(startNode, startOffset)
-			range.setEnd(endNode, endOffset)
-			documentSelection.removeAllRanges()
-			documentSelection.addRange(range)
+			if (direction === 'forward')
+				documentSelection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
+			else
+				documentSelection.setBaseAndExtent(endNode, endOffset, startNode, startOffset)
 		}
+	}
+
+	/**
+	* Get the character offset of a node in the editor.
+	*/
+	getNodeOffset(target: Node): number {
+		const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
+		let node
+		let offset = 0
+
+		function isTarget(node: Node): boolean {
+			while (node) {
+				if (node === target)
+					return true
+
+				node = node.parentNode!
+			}
+
+			return false
+		}
+
+		while (node = walker.nextNode()) {
+			// To not hardcode md-line here, add one for each direct child of the editor instead
+			if (node.parentElement === this.root)
+				offset++
+			else {
+				if (isTarget(node))
+						break
+
+				if (node.nodeType === Node.TEXT_NODE)
+					offset += node.textContent?.length ?? 0
+			}
+		}
+
+		return offset - 1
 	}
 
 	/**

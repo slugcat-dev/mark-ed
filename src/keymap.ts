@@ -169,20 +169,15 @@ function selectLineStart(editor: Editor, collapse: boolean): void {
 	const selection = editor.getSelection()
 	const line = editor.lineAt(selection.start)
 	const lineType = editor.markdown.lineTypes[line.num]
-	let newStart = line.from
+	let start = line.from
 
 	// Move the cursor to the start of a list item or block quote
 	if (/BlockQuote|List/.test(lineType)) {
 		const from = line.from + line.text.match(/^[\t ]*(?:> ?|[-+*] \[[x ]\] |[-+*] |\d+[).] )/i)![0].length
 
 		if (selection.start > from)
-			newStart = from
+			start = from
 	}
 
-	selection.start = newStart
-
-	if (collapse)
-		selection.end = newStart
-
-	editor.setSelection(selection)
+	editor.setSelection({ start }, collapse)
 }
