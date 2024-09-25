@@ -130,7 +130,7 @@ function insertNewlineAndIndent(editor: Editor): void {
 	const line = editor.lineAt(selection.start)
 	const lineType = editor.markdown.lineTypes[line.num]
 
-	if (/BlockQuote|List/.test(lineType)) {
+	if (/BlockQuote|List/.test(lineType) && selection.start === selection.end) {
 		const regex = lineType === 'OrderedList'
 			? /^(?<indent>[\t ]*)(?<num>\d+)(?<mark>[).] )/
 			: /^(?<indent>[\t ]*)(?<mark>> ?|[-+*] \[[x ]\] |[-+*] )/i

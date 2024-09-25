@@ -241,8 +241,7 @@ export class Editor {
 		this.prevSelection.focused = this.focused
 		this.prevSelection.direction = this.getSelectionDirection()
 
-		for (const lineElm of this.root.children)
-			this.hideMarks(lineElm, selection)
+		this.hideMarks(selection)
 	}
 
 	/**
@@ -275,7 +274,6 @@ export class Editor {
 		const before = this.markdown.lines
 		const after = this.markdown.parse(this.lines)
 		const delta = after.length - before.length
-		const len = Math.max(before.length, after.length)
 
 		// Changing the DOM confuses the browser about where to place the cursor,
 		// so we place it to where it was before after the update
@@ -283,34 +281,32 @@ export class Editor {
 
 		if (delta === 0) {
 			// No lines added or deleted, only apply changes
-			for (let i = 0; i < len; i++) {
+			for (let i = 0; i < after.length; i++) {
 				if (before[i] !== after[i])
 					this.root.children[i].innerHTML = after[i]
 			}
 		} else {
 			// Calculate the diff range
-			let start = 0
-			let end = len - 1
+			const len = Math.max(before.length, after.length)
+			let firstChangedLine = 0
+			let lastChangedLine = -1
 
-			while (start < len && before[start] === after[start])
-				start++
+			while (firstChangedLine < len && before[firstChangedLine] === after[firstChangedLine])
+				firstChangedLine++
 
-			// TODO: fix end calculation
-			/*
-			if (start > Math.min(before.length, after.length)) {
-				while (end > start && before[end - Math.max(delta, 0)] === after[end + Math.min(delta, 0)])
-					end--
-			}
-			*/
+			while (-lastChangedLine < len && before[before.length + lastChangedLine] === after[after.length + lastChangedLine])
+				lastChangedLine--
+
+			lastChangedLine = Math.max(len + lastChangedLine, firstChangedLine + delta)
 
 			// Remove all children in the diff range
-			for (let i = start; i <= end - Math.max(delta, 0); i++) {
-				if (this.root.children[start])
-					this.root.removeChild(this.root.children[start])
+			for (let i = firstChangedLine; i <= lastChangedLine - Math.max(delta, 0); i++) {
+				if (this.root.children[firstChangedLine])
+					this.root.removeChild(this.root.children[firstChangedLine])
 			}
 
 			// Insert the new or updated lines
-			for (let i = start; i <= end; i++) {
+			for (let i = firstChangedLine; i <= lastChangedLine; i++) {
 				const line = after[i]
 
 				if (line === undefined)
@@ -325,8 +321,7 @@ export class Editor {
 			}
 		}
 
-		for (const lineElm of this.root.children)
-			this.hideMarks(lineElm, selection)
+		this.hideMarks(selection)
 
 		if (this.focused)
 			this.setSelection(selection)
@@ -335,24 +330,24 @@ export class Editor {
 	/**
 	 * Hide Markdown marks in a line that are not in the currect selection.
 	 */
-	private hideMarks(lineElm: Element, selection: EditorSelection): void {
+	private hideMarks(selection: EditorSelection): void {
 		if (!this.config.hideMarks)
 			return
 
-		// TODO: support for multiline blocks (blockquotes, ...)
-		// Use `this.lineTypes`.
-		// Currently requires CSS with complex selectors.
+		// TODO: multiline blocks
 
-		lineElm.querySelectorAll(':has(> .md-mark)').forEach(element => {
-			const start = this.getNodeOffset(element)
-			const end = start + (element.textContent?.length ?? 0)
-			const marks = element.querySelectorAll('& > .md-mark')
-			const isVisible = selection.start <= end && selection.end >= start
+		for (const lineElm of this.root.children) {
+			lineElm.querySelectorAll(':has(> .md-mark)').forEach((element) => {
+				const start = this.getNodeOffset(element)
+				const end = start + (element.textContent?.length ?? 0)
+				const marks = element.querySelectorAll('& > .md-mark')
+				const isVisible = selection.start <= end && selection.end >= start
 
-			marks.forEach(mark => {
-				(mark as HTMLElement).classList.toggle('md-hidden', !(this.focused && isVisible))
+				marks.forEach((mark) => {
+					(mark as HTMLElement).classList.toggle('md-hidden', !(this.focused && isVisible))
+				})
 			})
-		})
+		}
 	}
 
 	/**
