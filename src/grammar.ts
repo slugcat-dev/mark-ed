@@ -110,7 +110,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const checkbox = `<input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}>`
 			const text = parser.parseInline(match.groups!.text)
 
-			return `${indent}<span class="md-task"><span class="md-mark">${mark[0]} [<span style="font-family: monospace;">${mark[3]}</span>]</span>${checkbox}</span> ${text}`
+			return `${indent}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${text}`
 		}
 	},
 	UnorderedList: {

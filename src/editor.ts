@@ -213,17 +213,14 @@ export class Editor {
 		const pos = checkboxPos - line.from - 2
 		const text = line.text
 
-		console.log(pos)
-
 		this.lines[line.num] = text.substring(0, pos)
 			+ (text[pos] === ' ' ? 'x' : ' ')
 			+ text.substring(pos + 1)
 
-		if (!this.focused) {
+		if (!this.focused)
 			this.root.focus()
-			this.updateDOM(Editor.selectionFrom(line.end))
-		} else
-			this.updateDOM()
+
+		this.updateDOM(Editor.selectionFrom(line.end))
 	}
 
 	private handleSelection(): void {
@@ -305,19 +302,19 @@ export class Editor {
 					this.root.removeChild(this.root.children[firstChangedLine])
 			}
 
-			// Insert the new or updated lines
-			for (let i = firstChangedLine; i <= lastChangedLine; i++) {
-				const line = after[i]
+				// Insert the new or updated lines
+					for (let i = firstChangedLine; i <= lastChangedLine; i++) {
+						const line = after[i]
 
-				if (line === undefined)
-					continue
+						if (line === undefined)
+							continue
 
-				const lineElm = document.createElement('div')
+						const lineElm = document.createElement('div')
 
-				lineElm.className = 'md-line'
-				lineElm.innerHTML = line
+						lineElm.className = 'md-line'
+						lineElm.innerHTML = line
 
-				this.root.insertBefore(lineElm, this.root.children[i] ?? null)
+						this.root.insertBefore(lineElm, this.root.children[i] ?? null)
 			}
 		}
 

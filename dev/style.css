@@ -1,3 +1,5 @@
+@import 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu+Mono:wght@400;700&display=swap';
+
 * {
 	box-sizing: border-box;
 }
@@ -7,7 +9,7 @@ body {
 	max-width: calc(100vw - 2rem);
 	margin: 1rem auto;
 	font-size: 1rem;
-	font-family: sans-serif;
+	font-family: 'Roboto', sans-serif;
 }
 
 .md-editor {
@@ -18,7 +20,7 @@ body {
 	border-radius: .25rem;
 }
 
-.md-editor:has(> .md-line:only-child > br)::before {
+.md-editor:has(> .md-line:only-child > br:only-child)::before {
 	content: attr(data-placeholder);
 	position: absolute;
 	color: gray;
@@ -135,13 +137,16 @@ body {
 }
 
 .md-task {
+	.md-checkmark {
+		font-family: 'Ubuntu Mono', monospace;
+	}
+
 	input {
 		position: relative;
 		top: .125rem;
 		width: .875rem;
 		height: .875rem;
 		margin: 0;
-		margin-inline-end: .25rem;
 	}
 
 	&:has(.md-mark:not(.md-hidden)) input {

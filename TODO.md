@@ -1,20 +1,26 @@
 # TODO
+- THE FUCKING DIFF RANGE CALCULATION
+
 - history
 - highlighting in markdown code blocks
+
 - chrome, android
-	- deleting characters near hidden marks doesn't set the selection correctly: **bold**word|
-	- checkbox clicky doesn't set selection to end of task line
+	- keydown event not fired on backspace
+
 - safari, ios
 	- checkbox no clicky
 	- checkbox valign
+
 - drag and drop handling
 - make links clicky bois aswell
+
 - custom cursor
 - change event
 - reconfigure
-- delete task backward misplaces cursor
+
 - `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
 - scrollIntoView
+
 - default eslint
 - default stylesheet
 

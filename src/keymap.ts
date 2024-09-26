@@ -121,6 +121,34 @@ export const defaultKeymap: Keymap = {
 	},
 
 	// Other keybinds
+	'Backspace': (editor) => {
+		const selection = editor.getSelection()
+
+		// TODO: out of bounds check
+
+		// Delete list marks and indentation
+		if (selection.start === selection.end) {
+			const line = editor.lineAt(selection.start)
+			const lineType = editor.markdown.lineTypes[line.num]
+			const lineIndent = line.text.match(/^[\t ]*/)![0]
+
+			selection.start -= 1
+
+			if (/BlockQuote|List/.test(lineType)) {
+				const markLength = line.text.match(/^[\t ]*(?:> ?|[-+*] \[[x ]\] |[-+*] |\d+[).] )/i)![0].length - lineIndent.length
+
+				if (selection.start + 1 === line.from + lineIndent.length + markLength)
+					selection.start -= markLength - 1
+			} else if (editor.config.indentWithSpaces) {
+				if (selection.start + 1 === line.from + lineIndent.length)
+					selection.start -= editor.config.tabSize - 1
+			}
+		}
+
+		editor.lines = (editor.content.substring(0, selection.start) + editor.content.substring(selection.end)).split('\n')
+
+		editor.updateDOM(Editor.selectionFrom(selection.start))
+	},
 	'Home': (editor) => selectLineStart(editor, true),
 	'Shift Home': (editor) => selectLineStart(editor, false)
 }
@@ -172,7 +200,7 @@ function selectLineStart(editor: Editor, collapse: boolean): void {
 	let start = line.from
 
 	// Move the cursor to the start of a list item or block quote
-	if (/BlockQuote|List/.test(lineType)) {
+	if (/BlockQuote|List/.test(lineType) && collapse) {
 		const from = line.from + line.text.match(/^[\t ]*(?:> ?|[-+*] \[[x ]\] |[-+*] |\d+[).] )/i)![0].length
 
 		if (selection.start > from)
