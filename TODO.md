@@ -1,6 +1,4 @@
 # TODO
-- THE FUCKING DIFF RANGE CALCULATION
-
 - history
 - highlighting in markdown code blocks
 
@@ -9,7 +7,11 @@
 
 - safari, ios
 	- checkbox no clicky
+
+- safari, firefox
 	- checkbox valign
+
+- ctrl + backspace
 
 - drag and drop handling
 - make links clicky bois aswell

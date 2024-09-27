@@ -129,6 +129,9 @@ export class Editor {
 		this.root.style.whiteSpace = 'pre-wrap'
 		this.root.style.tabSize = this.config.tabSize.toString()
 
+		if (!this.root.firstChild)
+			this.root.innerHTML = '<div class="md-line"><br></div>'
+
 		if (!this.config.readonly)
 			this.setup()
 	}
@@ -151,7 +154,7 @@ export class Editor {
 		document.addEventListener('selectionchange', this.handlers.selection)
 	}
 
-	private handleInput(event?: Event): void {
+	private handleInput(event: Event): void {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
 		if (event instanceof InputEvent && event.isComposing)
@@ -268,7 +271,14 @@ export class Editor {
 	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
 	 */
 	updateDOM(overwriteSelection?: EditorSelection): void {
-		const before = this.markdown.lines
+		const before = Array.from(this.root.children).map((lineElm) => {
+			const elm = lineElm.cloneNode(true) as HTMLElement
+
+			elm.querySelectorAll('.md-hidden')
+				.forEach((e) => e.classList.remove('md-hidden'))
+
+			return elm.innerHTML
+		})
 		const after = this.markdown.parse(this.lines)
 		const delta = after.length - before.length
 
@@ -294,28 +304,34 @@ export class Editor {
 			while (-lastChangedLine < len && before[before.length + lastChangedLine] === after[after.length + lastChangedLine])
 				lastChangedLine--
 
-			lastChangedLine = Math.max(len + lastChangedLine, firstChangedLine + delta)
+			lastChangedLine = Math.max(len + lastChangedLine, firstChangedLine + Math.abs(delta) - 1)
 
 			// Remove all children in the diff range
-			for (let i = firstChangedLine; i <= lastChangedLine - Math.max(delta, 0); i++) {
-				if (this.root.children[firstChangedLine])
-					this.root.removeChild(this.root.children[firstChangedLine])
+			for (let i = lastChangedLine - Math.max(delta, 0); i >= firstChangedLine; i--) {
+				if (this.root.children[i]) {
+						this.root.removeChild(this.root.children[i])
+				}
 			}
 
-				// Insert the new or updated lines
-					for (let i = firstChangedLine; i <= lastChangedLine; i++) {
-						const line = after[i]
+			// Add changed lines to a fragment
+			const fragment = document.createDocumentFragment();
 
-						if (line === undefined)
-							continue
+			for (let i = firstChangedLine; i <= lastChangedLine + Math.min(delta, 0); i++) {
+				const line = after[i]
 
-						const lineElm = document.createElement('div')
+				if (line === undefined)
+						continue
 
-						lineElm.className = 'md-line'
-						lineElm.innerHTML = line
+				const lineElm = document.createElement('div')
 
-						this.root.insertBefore(lineElm, this.root.children[i] ?? null)
+				lineElm.className = 'md-line'
+				lineElm.innerHTML = line
+
+				fragment.appendChild(lineElm)
 			}
+
+			// Insert the fragment
+			this.root.insertBefore(fragment, this.root.children[firstChangedLine] ?? null)
 		}
 
 		this.hideMarks(selection)
