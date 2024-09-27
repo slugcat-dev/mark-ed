@@ -1,28 +1,30 @@
 # TODO
+## Bugs
+- ctrl + backspace
+- drag and drop handling
+- "https://url.com/"
+- only compare text and line type?
+
+## Features
 - history
 - highlighting in markdown code blocks
-
-- chrome, android
-	- keydown event not fired on backspace
-
-- safari, ios
-	- checkbox no clicky
-
-- safari, firefox
-	- checkbox valign
-
-- ctrl + backspace
-
-- drag and drop handling
 - make links clicky bois aswell
 
+## Browser Quirks
+- chrome, android: keydown event not fired on backspace
+- safari, ios: checkbox no clicky
+- safari, firefox: checkbox valign
+
+## Backlog
 - custom cursor
 - change event
 - reconfigure
 
+## Other
 - `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
 - scrollIntoView
 
+## Project
 - default eslint
 - default stylesheet
 
