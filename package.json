@@ -1,7 +1,7 @@
 {
   "name": "@slugcat-dev/mark-ed",
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "In-browser editor that supports Markdown formatting",
   "homepage": "https://doublekekse.dev/mark-ed",
   "repository": {
@@ -21,9 +21,9 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.7.4",
     "typescript": "^5.6.2",
-    "vite": "^5.4.4"
+    "vite": "^5.4.8"
   },
   "license": "MIT"
 }

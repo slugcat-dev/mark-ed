@@ -65,7 +65,6 @@ export const defaultKeymap: Keymap = {
 	'Shift Tab': outdent,
 	'Backspace': deleteChar,
 	'Shift Backspace': deleteChar,
-	'CtrlAlt Backspace': deleteChar,
 	'Home': (editor) => selectLineStart(editor, true),
 	'Shift Home': (editor) => selectLineStart(editor, false)
 }

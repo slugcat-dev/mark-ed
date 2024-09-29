@@ -1,6 +1,5 @@
 # TODO
 ## Bugs
-- ctrl + backspace
 - drag and drop handling
 - only compare text and line type?
 - quote line wrap

@@ -457,12 +457,30 @@ export class Editor {
 			return { start: 0, end: 0 }
 
 		const range = selection.getRangeAt(0)
-		const start = this.getNodeOffset(range.startContainer) + range.startOffset
-		const end = this.getNodeOffset(range.endContainer) + range.endOffset
+		const toStartRange = range.cloneRange()
+		const toEndRange = range.cloneRange()
+
+		toStartRange.selectNodeContents(this.root)
+		toStartRange.setEnd(range.startContainer, range.startOffset)
+		toEndRange.selectNodeContents(this.root)
+		toEndRange.setEnd(range.endContainer, range.endOffset)
+
+		function getRangeLength(range: Range): number {
+			const fragment = range.cloneContents()
+			const lines = fragment.children.length
+			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
+			let length = 0
+			let node
+
+			while (node = walker.nextNode())
+				length += (node as Text).length
+
+			return Math.max(0, length + lines - 1)
+		}
 
 		return {
-			start: Math.max(0, Math.min(start, this.content.length)),
-			end: Math.max(0, Math.min(end, this.content.length))
+			start: Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length)),
+			end: Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
 		}
 	}
 
