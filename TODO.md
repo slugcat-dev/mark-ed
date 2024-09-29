@@ -3,11 +3,13 @@
 - ctrl + backspace
 - drag and drop handling
 - only compare text and line type?
+- quote line wrap
 
 ## Features
 - history
 - highlighting in markdown code blocks
 - make links clicky bois aswell
+- change event
 
 ## Browser Quirks
 - chrome, android: keydown event not fired on backspace
@@ -16,7 +18,6 @@
 
 ## Backlog
 - custom cursor
-- change event
 - reconfigure
 
 ## Other

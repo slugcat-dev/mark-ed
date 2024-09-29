@@ -102,13 +102,14 @@ function insertNewlineAndIndent(editor: Editor): void {
 function continueMarkup(editor: Editor, selection: EditorSelection, line: Line, indent: string, mark: string): void {
 	const text = line.text.substring(indent.length + mark.length)
 
-	if (text.length > 0)
+	if (selection.start < line.from + indent.length + mark.length)
+		editor.insertAtSelection('\n' + indent)
+	else if (text.length > 0)
 		editor.insertAtSelection('\n' + indent + mark)
 	else {
 		editor.lines[line.num] = indent
-		selection.start = selection.end = selection.start - mark.length
 
-		editor.updateDOM(selection)
+		editor.updateDOM(Editor.selectionFrom(selection.start - mark.length))
 	}
 }
 
@@ -144,7 +145,7 @@ function indent(editor: Editor): void {
 		editor.insertAtSelection(indent)
 }
 
-function outdent(editor: Editor) {
+function outdent(editor: Editor): void {
 	const selection = editor.getSelection()
 	const startLine = editor.lineAt(selection.start)
 	const endLine = editor.lineAt(selection.end)
@@ -178,7 +179,7 @@ function outdent(editor: Editor) {
 	editor.updateDOM(selection)
 }
 
-function deleteChar(editor: Editor) {
+function deleteChar(editor: Editor): void {
 	const selection = editor.getSelection()
 
 	// Delete list marks and indentation

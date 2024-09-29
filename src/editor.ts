@@ -344,21 +344,22 @@ export class Editor {
 	 * Hide Markdown marks in a line that are not in the currect selection.
 	 */
 	private hideMarks(selection: EditorSelection): void {
-		if (!this.config.hideMarks)
-			return
-
 		// TODO: multiline blocks
+
+		if (!this.config.hideMarks) {
+			this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
+
+			return
+		}
 
 		for (const lineElm of this.root.children) {
 			lineElm.querySelectorAll(':has(> .md-mark)').forEach((element) => {
 				const start = this.getNodeOffset(element)
 				const end = start + (element.textContent?.length ?? 0)
 				const marks = element.querySelectorAll('& > .md-mark')
-				const isVisible = selection.start <= end && selection.end >= start
+				const isVisible = this.focused && selection.start <= end && selection.end >= start
 
-				marks.forEach((mark) => {
-					(mark as HTMLElement).classList.toggle('md-hidden', !(this.focused && isVisible))
-				})
+				marks.forEach((mark) => mark.classList.toggle('md-hidden', !isVisible))
 			})
 		}
 	}

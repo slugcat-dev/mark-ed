@@ -137,7 +137,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 			const link = escapeHTML(match[1])
 			const isEmail = match[2] === '@'
 
-			return `<span><span class="md-mark">&lt;</span><a href=${(isEmail ? 'mailto:' : '') + link}>${link}</a><span class="md-mark">&gt;</span></span>`
+			return `<span class="md-autolink"><span class="md-mark">&lt;</span><a href=${(isEmail ? 'mailto:' : '') + link}>${link}</a><span class="md-mark">&gt;</span></span>`
 		}
 	},
 	InlineCode: {
