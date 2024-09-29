@@ -2,7 +2,6 @@
 ## Bugs
 - ctrl + backspace
 - drag and drop handling
-- "https://url.com/"
 - only compare text and line type?
 
 ## Features

@@ -107,6 +107,7 @@ export const defaultLineGrammar: LineGrammar = {
 		replace: (match, parser) => {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
+			// TODO: updateDOM: diffing: `checked` => `checked=""`
 			const checkbox = `<input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}>`
 			const text = parser.parseInline(match.groups!.text)
 
@@ -132,6 +133,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 		// Match links and E-Mail adresses enclosed in < and >
 		regex: /^<([a-z][a-z\d+.-]{1,31}:[^\s<>]+|[a-z\d](?:[\w!#$%&'*+\-./=?^`{|}~]*[a-z\d])?(@)[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?)*)>/i,
 		replace(match: Match) {
+			// TODO: updateDOM: diffing: handle `"`
 			const link = escapeHTML(match[1])
 			const isEmail = match[2] === '@'
 
@@ -199,7 +201,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 			for (;;) {
 				const last = urlEnd[end - 1]
 
-				if (/[?!.,:*_~]/.test(last) || (last === ')' && count(')') > count('(')))
+				if (/[!"'*,.:?_~]/.test(last) || (last === ')' && count(')') > count('(')))
 					end--
 				else
 					break
