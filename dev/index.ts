@@ -1,7 +1,7 @@
 import { Editor } from '../src/index'
 
 const editor = new Editor('editor', {
-	content: '# Hello, World!\n**wee** markdown works\n`=^∙∙^=`\n- [x] Checkbox',
+	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n**View on GitHub:**\nhttps://github.com/slugcat-dev/mark-ed',
 	tabSize: 2,
 	hideMarks: true,
 	keymap: {
@@ -55,3 +55,15 @@ function moveLine(up: boolean) {
 		editor.updateDOM({ start, end })
 	}
 }
+
+const btn = document.getElementById('toggleMarks')!
+
+btn.addEventListener('click', () => {
+	let hideMarks = btn.dataset.hideMarks !== 'true'
+
+	btn.dataset.hideMarks = hideMarks.toString()
+	btn.textContent = `${hideMarks ? 'Show' : 'Hide'} Markdown syntax`
+	editor.config.hideMarks = hideMarks
+
+	editor.updateDOM()
+})
