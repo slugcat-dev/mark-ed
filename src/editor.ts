@@ -1,13 +1,14 @@
 import { MarkdownParser, type MarkdownParserConfig } from './markdown'
 import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
 import { defaultInlineGrammar, defaultLineGrammar } from './grammar'
-import { defu } from './utils'
+import { defu, isFirefox } from './utils'
 
 export interface EditorConfig {
 	content: string
 	readonly: boolean
 	tabSize: number
 	indentWithSpaces: boolean
+	convertIndentation: boolean
 	hideMarks: boolean
 	keymap: Keymap
 	markdown: Partial<MarkdownParserConfig>
@@ -30,6 +31,7 @@ const defaultConfig: EditorConfig = {
 	readonly: false,
 	tabSize: 2,
 	indentWithSpaces: false,
+	convertIndentation: true,
 	hideMarks: false,
 	keymap: defaultKeymap,
 	markdown: {
@@ -44,7 +46,7 @@ export class Editor {
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
-		pointerdown: this.handlePointerdown.bind(this),
+		mousedown: this.handleMousedown.bind(this),
 		click: this.handleClick.bind(this),
 		selection: this.handleSelection.bind(this)
 	}
@@ -57,7 +59,7 @@ export class Editor {
 	readonly root: HTMLElement
 	readonly config: EditorConfig
 	/**
-	 * The MarkdownParser instance the editor uses.
+	 * The `MarkdownParser` instance the editor uses.
 	 */
 	readonly markdown: MarkdownParser
 
@@ -72,14 +74,14 @@ export class Editor {
 	}
 
 	set content(content: string) {
-		this.lines = this.convertIndentation(content)
+		this.lines = this.convertIndentation(content).split('\n')
 
 		// Update the DOM and move the cursor to the end
 		this.updateDOM(Editor.selectionFrom(content.length))
 	}
 
 	/**
-	 * Get if the editor is focused.
+	 * Get if the editor is currently focused.
 	 */
 	get focused(): boolean {
 		return this.root === document.activeElement
@@ -149,9 +151,15 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
-		this.root.addEventListener('pointerdown', this.handlers.pointerdown)
+		this.root.addEventListener('mousedown', this.handlers.mousedown)
 		this.root.addEventListener('click', this.handlers.click)
 		document.addEventListener('selectionchange', this.handlers.selection)
+
+		// Firefox doesn't fire the selectionchange event on focus / blur
+		if (isFirefox) {
+			this.root.addEventListener('focus', this.handlers.selection)
+			this.root.addEventListener('blur', this.handlers.selection)
+		}
 	}
 
 	private handleInput(event: Event): void {
@@ -191,8 +199,23 @@ export class Editor {
 		this.insertAtSelection(text)
 	}
 
-	private handlePointerdown(event: Event): void {
-		this.toggleCheckbox(event, false)
+	private handleMousedown(event: MouseEvent): void {
+		if (this.toggleCheckbox(event, false))
+			return
+
+		// Workaround for a bug in Firefox where inline elements prevent line selection on tripleclick
+		if (event.detail % 3 !== 0)
+			return
+
+		event.preventDefault()
+
+		const selection = document.getSelection()!
+		const lineElm = (event.target as Element).closest('.md-line')!
+		const range = document.createRange()
+
+		range.selectNodeContents(lineElm)
+		selection.removeAllRanges()
+		selection.addRange(range)
 	}
 
 	private handleClick(event: Event): void {
@@ -202,14 +225,14 @@ export class Editor {
 	/**
 	 * Toggle TaskList checkboxes
 	 */
-	private toggleCheckbox(event: Event, act = true): void {
+	private toggleCheckbox(event: Event, act = true): boolean {
 		if (!(event.target instanceof HTMLInputElement && event.target.matches('.md-task input[type="checkbox"]')))
-			return
+			return false
 
 		event.preventDefault()
 
 		if (!act)
-			return
+			return true
 
 		const checkboxPos = this.getNodeOffset(event.target as Element)
 		const line = this.lineAt(checkboxPos)
@@ -224,6 +247,8 @@ export class Editor {
 			this.root.focus()
 
 		this.updateDOM(Editor.selectionFrom(line.end))
+
+		return true
 	}
 
 	private handleSelection(): void {
@@ -308,9 +333,8 @@ export class Editor {
 
 			// Remove all children in the diff range
 			for (let i = lastChangedLine - Math.max(delta, 0); i >= firstChangedLine; i--) {
-				if (this.root.children[i]) {
-						this.root.removeChild(this.root.children[i])
-				}
+				if (this.root.children[i])
+						this.root.children[i].remove()
 			}
 
 			// Add changed lines to a fragment
@@ -411,7 +435,7 @@ export class Editor {
 	insertAtSelection(text: string): void {
 		const selection = this.getSelection()
 		const content = this.content.slice(0, selection.start)
-			+ this.convertIndentation(text).join('\n')
+			+ this.convertIndentation(text)
 			+ this.content.slice(selection.end)
 
 		this.lines = content.split('\n')
@@ -420,9 +444,13 @@ export class Editor {
 	}
 
 	/**
-	 * Convert indentation to spaces or tabs, depending on how the editor is configured
+	 * Convert the indentation of the lines in a text to spaces or tabs,
+	 * depending on how the editor is configured.
 	 */
-	convertIndentation(text: string): string[] {
+	convertIndentation(text: string): string {
+		if (!this.config.convertIndentation)
+			return text.replaceAll(/\r\n|\r|\n/, '\n')
+
 		const indentSpaces = ' '.repeat(this.config.tabSize)
 		const lines = []
 
@@ -441,7 +469,7 @@ export class Editor {
 				lines.push(line)
 		}
 
-		return lines
+		return lines.join('\n')
 	}
 
 	/**
@@ -657,8 +685,10 @@ export class Editor {
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
-		this.root.removeEventListener('pointerdown', this.handlers.pointerdown)
+		this.root.removeEventListener('mousedown', this.handlers.mousedown)
 		this.root.removeEventListener('click', this.handlers.click)
+		this.root.removeEventListener('focus', this.handlers.selection)
+		this.root.removeEventListener('blur', this.handlers.selection)
 		document.removeEventListener('selectionchange', this.handlers.selection)
 
 		// Make the editor element no longer editable

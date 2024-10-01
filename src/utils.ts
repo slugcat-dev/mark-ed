@@ -1,4 +1,7 @@
-export const isMac = /Mac|iPod|iPhone|iPad/.test(typeof navigator !== undefined ? navigator.platform : '')
+const nav = typeof navigator !== 'undefined' ? navigator : { platform: '', userAgent: '' }
+
+export const isMac = /Mac|iPod|iPhone|iPad/i.test(navigator.platform)
+export const isFirefox = /Firefox/i.test(nav.userAgent)
 
 /**
  * Recursively merge default values into an object.

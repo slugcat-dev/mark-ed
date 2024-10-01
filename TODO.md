@@ -1,7 +1,5 @@
 # TODO
 ## Bugs
-- drag and drop handling
-- only compare text and line type?
 - quote line wrap
 
 ## Features

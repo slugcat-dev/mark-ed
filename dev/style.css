@@ -14,7 +14,7 @@ body {
 
 #toggleMarks {
 	margin-top: .5rem;
-	padding: .125rem;
+	padding: .125rem .25rem;
 	font-size: .75rem;
 	float: right;
 }
@@ -31,8 +31,6 @@ body {
 	content: attr(data-placeholder);
 	position: absolute;
 	color: gray;
-	pointer-events: none;
-	user-select: none;
 }
 
 .md-line {
