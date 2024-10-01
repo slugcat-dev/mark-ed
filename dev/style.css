@@ -146,15 +146,20 @@ body {
 		font-family: 'Ubuntu Mono', monospace;
 	}
 
-	input {
+	.md-checkbox {
+		display: inline-flex;
 		position: relative;
 		top: .125rem;
-		width: .875rem;
-		height: .875rem;
-		margin: 0;
+		margin-inline-end: .25rem;
+
+		input {
+			width: .875rem;
+			height: .875rem;
+			margin: 0;
+		}
 	}
 
-	&:has(.md-mark:not(.md-hidden)) input {
+	&:has(.md-mark:not(.md-hidden)) .md-checkbox {
 		display: none;
 	}
 }

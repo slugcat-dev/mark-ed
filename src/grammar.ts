@@ -108,7 +108,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
 			// TODO: updateDOM: diffing: `checked` => `checked=""`
-			const checkbox = `<input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}>`
+			const checkbox = `<span class="md-checkbox"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
 			const text = parser.parseInline(match.groups!.text)
 
 			return `${indent}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${text}`

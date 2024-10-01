@@ -11,7 +11,6 @@
 ## Browser Quirks
 - chrome, android: keydown event not fired on backspace
 - safari, ios: checkbox no clicky
-- safari, firefox: checkbox valign
 
 ## Backlog
 - custom cursor
