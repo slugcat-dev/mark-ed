@@ -74,7 +74,7 @@ export const defaultLineGrammar: LineGrammar = {
 
 			return {
 				match,
-				replacement: `<code class="md-code-block">${indent}<span class="md-mark">${mark}${space}${lang.length > 0 ? `<span class="md-code-lang">${lang}</span>` : ''}${rest}</span></code>`
+				replacement: `<code class="md-code-block">${indent}<span class="md-mark">${mark}${space}${lang.length ? `<span class="md-code-lang">${lang}</span>` : ''}${rest}</span></code>`
 			}
 		},
 		close(line, openMatch) {
@@ -240,4 +240,9 @@ export const defaultInlineGrammar: InlineGrammar = {
 
 function inline(tag: string): (delimiter: string, text: string) => string {
 	return (delimiter: string, text: string) => `<${tag}><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></${tag}>`
+}
+
+export const defaultBlockHideRules: Record<string, string> = {
+	BlockQuote: '.md-quote > .md-mark',
+	CodeBlock: '.md-code-block > .md-mark'
 }

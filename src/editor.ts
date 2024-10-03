@@ -1,6 +1,6 @@
 import { MarkdownParser, type MarkdownParserConfig } from './markdown'
 import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
-import { defaultInlineGrammar, defaultLineGrammar } from './grammar'
+import { defaultBlockHideRules, defaultInlineGrammar, defaultLineGrammar } from './grammar'
 import { defu, isFirefox } from './utils'
 
 export interface EditorConfig {
@@ -10,6 +10,7 @@ export interface EditorConfig {
 	indentWithSpaces: boolean
 	convertIndentation: boolean
 	hideMarks: boolean
+	blockHideRules: Record<string, string>
 	keymap: Keymap
 	markdown: Partial<MarkdownParserConfig>
 }
@@ -33,6 +34,7 @@ const defaultConfig: EditorConfig = {
 	indentWithSpaces: false,
 	convertIndentation: true,
 	hideMarks: false,
+	blockHideRules: defaultBlockHideRules,
 	keymap: defaultKeymap,
 	markdown: {
 		lineGrammar: defaultLineGrammar,
@@ -54,7 +56,7 @@ export class Editor {
 		start: 0,
 		end: 0,
 		focused: false,
-		direction: 'forward'
+		direction: 'none'
 	}
 	readonly root: HTMLElement
 	readonly config: EditorConfig
@@ -117,7 +119,7 @@ export class Editor {
 		this.root = element
 		this.config = defu(config, defaultConfig)
 		this.keymap = compileKeymap(this.config.keymap)
-		this.markdown = new MarkdownParser(this.config.markdown)
+		this.markdown = new MarkdownParser(this.config.markdown as MarkdownParserConfig)
 
 		this.createEditorElement()
 
@@ -266,7 +268,7 @@ export class Editor {
 		this.prevSelection.focused = this.focused
 		this.prevSelection.direction = this.getSelectionDirection()
 
-		this.hideMarks(selection)
+		this.hideMarks()
 	}
 
 	/**
@@ -358,33 +360,50 @@ export class Editor {
 			this.root.insertBefore(fragment, this.root.children[firstChangedLine] ?? null)
 		}
 
-		this.hideMarks(selection)
-
 		if (this.focused)
 			this.setSelection(selection)
+
+		this.hideMarks()
 	}
 
 	/**
-	 * Hide Markdown marks in a line that are not in the currect selection.
+	 * Hide Markdown syntax of formatting elements
+	 * that are not contained within in the currect selection.
 	 */
-	private hideMarks(selection: EditorSelection): void {
-		// TODO: multiline blocks
+	private hideMarks(): void {
+		if (!this.config.hideMarks)
+			return this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
 
-		if (!this.config.hideMarks) {
-			this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
+		const selection = document.getSelection()
+		let blockMarks = []
+		let blockVisible = false
 
-			return
-		}
+		// Returns if a node is contained within in the currect selection
+		const isVisible = (node: Node) => this.focused && selection?.containsNode(node, true)
 
-		for (const lineElm of this.root.children) {
-			lineElm.querySelectorAll(':has(> .md-mark)').forEach((element) => {
-				const start = this.getNodeOffset(element)
-				const end = start + (element.textContent?.length ?? 0)
-				const marks = element.querySelectorAll('& > .md-mark')
-				const isVisible = this.focused && selection.start <= end && selection.end >= start
+		for (let i = 0; i < this.lines.length; i++) {
+			const lineElm = this.root.children[i]
+			const lineType = this.markdown.lineTypes[i]
+			const marks = lineElm.querySelectorAll('.md-mark')
 
-				marks.forEach((mark) => mark.classList.toggle('md-hidden', !isVisible))
+			// Toggle the visibility of all marks in a line
+			marks.forEach((mark) => {
+				mark.classList.toggle('md-hidden', !isVisible(mark.parentNode!))
 			})
+
+			if (lineType in this.config.blockHideRules) {
+				// Accumulate all block marks, eg. all blockquote marks in a multiline blockquote
+				blockMarks.push(...lineElm.querySelectorAll(this.config.blockHideRules[lineType]))
+
+				if (isVisible(lineElm))
+					blockVisible = true
+			} else if (blockMarks.length) {
+				// Toggle the visibility of all block marks
+				blockMarks.forEach((mark) => mark.classList.toggle('md-hidden', !blockVisible))
+
+				blockMarks = []
+				blockVisible = false
+			}
 		}
 	}
 
@@ -457,7 +476,7 @@ export class Editor {
 		for (const line of text.split(/\r\n|\r|\n/)) {
 			const lineIndent = line.match(/^[\t ]*/)![0]
 
-			if (lineIndent.length > 0) {
+			if (lineIndent.length) {
 				const newIndent = (
 					this.config.indentWithSpaces
 					? lineIndent.replaceAll('\t', indentSpaces)
@@ -512,19 +531,26 @@ export class Editor {
 		}
 	}
 
-	private getSelectionDirection(): 'forward' | 'backward' {
+	private getSelectionDirection(): 'forward' | 'backward' | 'none' {
 		const selection = document.getSelection()
 
-		if (!selection || selection.rangeCount === 0)
-			return 'forward'
+		if (!selection)
+			return 'none'
+
+		// Only Firefox directly supports direction
+		if ('direction' in selection)
+			return selection.direction as 'forward' | 'backward' | 'none'
+
+		if (selection.isCollapsed || selection.anchorNode === null || selection.focusNode === null)
+			return 'none'
 
 		if (selection.anchorNode === selection.focusNode)
 			return selection.anchorOffset < selection.focusOffset ? 'forward' : 'backward'
 
 		const range = document.createRange()
 
-		range.setStart(selection.anchorNode!, selection.anchorOffset)
-		range.setEnd(selection.focusNode!, selection.focusOffset)
+		range.setStart(selection.anchorNode, selection.anchorOffset)
+		range.setEnd(selection.focusNode, selection.focusOffset)
 
 		return range.collapsed ? 'backward' : 'forward'
 	}
@@ -635,10 +661,10 @@ export class Editor {
 		}
 
 		if (startNode && endNode) {
-			if (direction === 'forward')
-				documentSelection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
-			else
+			if (direction === 'backward')
 				documentSelection.setBaseAndExtent(endNode, endOffset, startNode, startOffset)
+			else
+				documentSelection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
 		}
 	}
 

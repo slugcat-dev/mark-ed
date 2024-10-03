@@ -11,9 +11,9 @@ export class MarkdownParser {
 	lines: string[] = []
 	lineTypes: string[] = []
 
-	constructor(config?: Partial<MarkdownParserConfig>) {
-		this.lineGrammar = config?.lineGrammar ?? defaultLineGrammar
-		this.inlineGrammar = config?.inlineGrammar ?? defaultInlineGrammar
+	constructor(config: MarkdownParserConfig) {
+		this.lineGrammar = config.lineGrammar
+		this.inlineGrammar = config.inlineGrammar
 	}
 
 	parse(lines: string[]): string[] {

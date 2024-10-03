@@ -1,6 +1,8 @@
 const nav = typeof navigator !== 'undefined' ? navigator : { platform: '', userAgent: '' }
 
-export const isMac = /Mac|iPod|iPhone|iPad/i.test(navigator.platform)
+export const isMac = /Mac|iPod|iPhone|iPad/i.test(nav.platform)
+export const isAndroid = /Android/i.test(nav.userAgent)
+export const isChrome = /Chrome/i.test(nav.userAgent)
 export const isFirefox = /Firefox/i.test(nav.userAgent)
 
 /**

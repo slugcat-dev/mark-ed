@@ -10,6 +10,8 @@
 
 ## Browser Quirks
 - chrome, android: keydown event not fired on backspace
+	https://github.com/codemirror/view/blob/main/src/input.ts#L898
+	https://github.com/codemirror/view/blob/main/src/domobserver.ts#L296
 - safari, ios: checkbox no clicky
 
 ## Backlog

@@ -103,7 +103,7 @@ function continueMarkup(editor: Editor, selection: EditorSelection, line: Line, 
 
 	if (selection.start < line.from + indent.length + mark.length)
 		editor.insertAtSelection('\n' + indent)
-	else if (text.length > 0)
+	else if (text.length)
 		editor.insertAtSelection('\n' + indent + mark)
 	else {
 		editor.lines[line.num] = indent
