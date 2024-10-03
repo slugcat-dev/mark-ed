@@ -79,7 +79,7 @@ export const defaultLineGrammar: LineGrammar = {
 		},
 		close(line, openMatch) {
 			const openMark = openMatch.groups!.mark
-			const match = RegExp(`^(?<spaceBefore>\s*)(?<mark>\`{${openMark.length},})(?<spaceAfter>\\s*)$`).exec(line)
+			const match = RegExp(`^(?<spaceBefore>\\s*)(?<mark>\`{${openMark.length},})(?<spaceAfter>\\s*)$`).exec(line)
 
 			if (!match)
 				return false
@@ -94,12 +94,13 @@ export const defaultLineGrammar: LineGrammar = {
 		line: (line) => `<code class="md-code-block">${fixLine(line)}</code>`
 	},
 	BlockQuote: {
-		regex: /^(?<indent>[\t ]*)>(?<text>.*)/,
+		regex: /^(?<indent>[\t ]*)(?<mark>> ?)(?<text>.*)/,
 		replace(match, parser) {
 			const indent = match.groups!.indent
+			const mark = escapeHTML(match.groups!.mark)
 			const text = parser.parseInline(match.groups!.text)
 
-			return `${indent}<div class="md-quote"><span class="md-mark">&gt;</span>${text}</div>`
+			return `<div class="md-quote">${indent}<span class="md-mark">${mark}</span>${text}</div>`
 		}
 	},
 	TaskList: {

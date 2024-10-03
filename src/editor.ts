@@ -268,7 +268,7 @@ export class Editor {
 		this.prevSelection.focused = this.focused
 		this.prevSelection.direction = this.getSelectionDirection()
 
-		this.hideMarks()
+		this.hideMarks(selection)
 	}
 
 	/**
@@ -360,26 +360,38 @@ export class Editor {
 			this.root.insertBefore(fragment, this.root.children[firstChangedLine] ?? null)
 		}
 
+		this.hideMarks(selection)
+
 		if (this.focused)
 			this.setSelection(selection)
-
-		this.hideMarks()
 	}
 
 	/**
 	 * Hide Markdown syntax of formatting elements
 	 * that are not contained within in the currect selection.
 	 */
-	private hideMarks(): void {
+	private hideMarks(selection: EditorSelection): void {
 		if (!this.config.hideMarks)
 			return this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
 
-		const selection = document.getSelection()
+		const documentSelection = document.getSelection()
 		let blockMarks = []
 		let blockVisible = false
 
 		// Returns if a node is contained within in the currect selection
-		const isVisible = (node: Node) => this.focused && selection?.containsNode(node, true)
+		const isVisible = (node: Node) => {
+			if (!this.focused)
+				return false
+
+			if (documentSelection?.containsNode(node, true))
+				return true
+
+			// Native containsNode doesn't return true if the selection only touches the node
+			const nodeOffset = this.getNodeOffset(node)
+			const nodeEnd = nodeOffset + (node.textContent?.length ?? 0)
+
+			return selection.start <= nodeEnd && selection.end >= nodeOffset
+		}
 
 		for (let i = 0; i < this.lines.length; i++) {
 			const lineElm = this.root.children[i]
@@ -537,8 +549,8 @@ export class Editor {
 		if (!selection)
 			return 'none'
 
-		// Only Firefox directly supports direction
-		if ('direction' in selection)
+		// Currently only Firefox supports direction
+		if (selection.direction)
 			return selection.direction as 'forward' | 'backward' | 'none'
 
 		if (selection.isCollapsed || selection.anchorNode === null || selection.focusNode === null)

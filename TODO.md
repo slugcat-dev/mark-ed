@@ -25,6 +25,7 @@
 ## Project
 - default eslint
 - default stylesheet
+- blockHideRules doc
 
 # Markdown Support
 https://github.github.com/gfm/
