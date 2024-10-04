@@ -389,9 +389,9 @@ export class Editor {
 			return selection.start <= nodeEnd && selection.end >= nodeOffset
 		}
 
-		for (let i = 0; i < this.lines.length; i++) {
-			const lineElm = this.root.children[i]
-			const lineType = this.markdown.lineTypes[i]
+		for (let lineNum = 0; lineNum < this.lines.length; lineNum++) {
+			const lineElm = this.root.children[lineNum]
+			const lineType = this.markdown.lineTypes[lineNum]
 			const marks = lineElm.querySelectorAll('.md-mark')
 
 			// Toggle the visibility of all marks in a line
@@ -399,14 +399,19 @@ export class Editor {
 				mark.classList.toggle('md-hidden', !isVisible(mark.parentNode!))
 			})
 
-			if (lineType in this.config.blockHideRules) {
-				// Accumulate all block marks, eg. all blockquote marks in a multiline blockquote
+			// Accumulate all block marks, eg. all blockquote marks in a multiline blockquote
+			const inBlock = lineType in this.config.blockHideRules
+			const endBlock = !inBlock || lineElm === this.root.lastChild
+
+			if (inBlock) {
 				blockMarks.push(...lineElm.querySelectorAll(this.config.blockHideRules[lineType]))
 
 				if (isVisible(lineElm))
 					blockVisible = true
-			} else if (blockMarks.length) {
-				// Toggle the visibility of all block marks
+			}
+
+			// Toggle the visibility of all block marks
+			if (endBlock && blockMarks.length) {
 				blockMarks.forEach((mark) => mark.classList.toggle('md-hidden', !blockVisible))
 
 				blockMarks = []
