@@ -1,7 +1,4 @@
 # TODO
-## Bugs
-- quote line wrap
-
 ## Features
 - history
 - highlighting in markdown code blocks

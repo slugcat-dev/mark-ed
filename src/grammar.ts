@@ -100,7 +100,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const mark = escapeHTML(match.groups!.mark)
 			const text = parser.parseInline(match.groups!.text)
 
-			return `<div class="md-quote">${indent}<span class="md-mark">${mark}</span>${text}</div>`
+			return `${indent}<div class="md-quote"><span class="md-mark">${mark}</span>${text}</div>`
 		}
 	},
 	TaskList: {

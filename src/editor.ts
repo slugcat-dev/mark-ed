@@ -130,7 +130,7 @@ export class Editor {
 		this.root.classList.add('md-editor')
 
 		// Important for whitespace formatting and to prevent the browser from replacing spaces with `&nbsp;`
-		this.root.style.whiteSpace = 'pre-wrap'
+		this.root.style.whiteSpace = 'pre'
 		this.root.style.tabSize = this.config.tabSize.toString()
 
 		if (!this.root.firstChild)
@@ -374,7 +374,6 @@ export class Editor {
 		if (!this.config.hideMarks)
 			return this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
 
-		const documentSelection = document.getSelection()
 		let blockMarks = []
 		let blockVisible = false
 
@@ -383,10 +382,7 @@ export class Editor {
 			if (!this.focused)
 				return false
 
-			if (documentSelection?.containsNode(node, true))
-				return true
-
-			// Native containsNode doesn't return true if the selection only touches the node
+			// Native Selection.containsNode doesn't return true if the selection only touches the node
 			const nodeOffset = this.getNodeOffset(node)
 			const nodeEnd = nodeOffset + (node.textContent?.length ?? 0)
 
@@ -700,7 +696,7 @@ export class Editor {
 		}
 
 		while (node = walker.nextNode()) {
-			// To not hardcode md-line here, add one for each direct child of the editor instead
+			// Add one for each direct child of root
 			if (node.parentElement === this.root)
 				offset++
 			else {

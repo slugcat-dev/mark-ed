@@ -19,18 +19,30 @@ body {
 	float: right;
 }
 
+/* Make the editor scrollable */
+.editor-wrapper {
+	border: 1px solid #ccc;
+	border-radius: .25rem;
+	overflow: auto;
+
+	&:focus-within {
+		outline: auto;
+	}
+}
+
 .md-editor {
+	min-width: max-content;
 	padding: 1rem;
 	font-size: .875rem;
 	line-height: 1.25rem;
-	border: 1px solid #ccc;
-	border-radius: .25rem;
-}
+	outline: none;
 
-.md-editor:has(> .md-line:only-child > br:only-child)::before {
-	content: attr(data-placeholder);
-	position: absolute;
-	color: gray;
+	/* Placeholder */
+	&:has(> .md-line:only-child > br:only-child)::before {
+		content: attr(data-placeholder);
+		position: absolute;
+		color: gray;
+	}
 }
 
 .md-line {
@@ -42,12 +54,7 @@ body {
 }
 
 .md-hidden {
-	/*
-	- Don't use `display: none`
-	- Don't use `inline-block` if not hidden
-
-	Both cause unexpected behaviour.
-	*/
+	/* Using `display: none` causes unexpected behaviour */
 	display: inline-block;
 	width: 0;
 	height: 0;
@@ -57,6 +64,7 @@ body {
 .md-hr {
 	display: inline-block;
 
+	/* Show an actual line instead of the mark */
 	&:has(.md-mark.md-hidden)::before {
 		content: '';
 		position: absolute;
@@ -100,11 +108,13 @@ body {
 	display: block;
 	padding-inline: .5rem;
 
+	/* Don't hide code block marks */
 	.md-hidden {
 		display: initial;
 	}
 }
 
+/* Add a border radius and margin to the first and last line of a code block */
 .md-line:first-child .md-code-block,
 .md-line:not(:has(.md-code-block)) + .md-line .md-code-block {
 	margin-top: .5rem;
@@ -123,29 +133,34 @@ body {
 	color: #048;
 }
 
-.md-quote > .md-mark {
-	display: initial;
-}
+/* Add a line to blockquotes when the mark is hidden */
+.md-quote {
+	display: inline-block;
+	position: relative;
 
-.md-quote > .md-mark.md-hidden {
-	color: transparent;
+	& > .md-mark.md-hidden {
+		display: initial;
+		color: transparent;
 
-	&::before {
-		content: '';
-		position: absolute;
-		top: -1px;
-		width: 3px;
-		height: calc(1.25rem + 2px);
-		background-color: #ccc;
-		border-radius: .125rem;
+		&::before {
+			content: '';
+			position: absolute;
+			top: -1px;
+			width: 3px;
+			height: calc(100% + 2px);
+			background-color: #ccc;
+			border-radius: .125rem;
+		}
 	}
 }
 
 .md-task {
+	/* Make all checkmarks the same width */
 	.md-checkmark {
 		font-family: 'Ubuntu Mono', monospace;
 	}
 
+	/* Clickable checkbox widget */
 	.md-checkbox {
 		display: inline-flex;
 		position: relative;
@@ -159,7 +174,8 @@ body {
 		}
 	}
 
-	&:has(.md-mark:not(.md-hidden)) .md-checkbox {
+	/* Hide the checkbox when the checkmark is visible */
+	&:not(:has(.md-mark.md-hidden)) .md-checkbox {
 		display: none;
 	}
 }
