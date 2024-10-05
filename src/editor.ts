@@ -6,6 +6,7 @@ import { defu, isFirefox } from './utils'
 export interface EditorConfig {
 	content: string
 	readonly: boolean
+	lineWrap: boolean
 	tabSize: number
 	indentWithSpaces: boolean
 	convertIndentation: boolean
@@ -30,6 +31,7 @@ export interface Line {
 const defaultConfig: EditorConfig = {
 	content: '',
 	readonly: false,
+	lineWrap: false,
 	tabSize: 2,
 	indentWithSpaces: false,
 	convertIndentation: true,
@@ -130,7 +132,7 @@ export class Editor {
 		this.root.classList.add('md-editor')
 
 		// Important for whitespace formatting and to prevent the browser from replacing spaces with `&nbsp;`
-		this.root.style.whiteSpace = 'pre'
+		this.root.style.whiteSpace = this.config.lineWrap ? 'pre-wrap' : 'pre'
 		this.root.style.tabSize = this.config.tabSize.toString()
 
 		if (!this.root.firstChild)
@@ -304,7 +306,8 @@ export class Editor {
 			elm.querySelectorAll('.md-hidden')
 				.forEach((e) => e.classList.remove('md-hidden'))
 
-			return elm.innerHTML
+			// Some browsers add an empty value to boolean attributes
+			return elm.innerHTML.replaceAll('=""', '')
 		})
 		const after = this.markdown.parse(this.lines)
 		const delta = after.length - before.length

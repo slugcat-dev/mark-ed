@@ -108,7 +108,6 @@ export const defaultLineGrammar: LineGrammar = {
 		replace: (match, parser) => {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
-			// TODO: updateDOM: diffing: `checked` => `checked=""`
 			const checkbox = `<span class="md-checkbox"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
 			const text = parser.parseInline(match.groups!.text)
 
@@ -134,11 +133,10 @@ export const defaultInlineGrammar: InlineGrammar = {
 		// Match links and E-Mail adresses enclosed in < and >
 		regex: /^<([a-z][a-z\d+.-]{1,31}:[^\s<>]+|[a-z\d](?:[\w!#$%&'*+\-./=?^`{|}~]*[a-z\d])?(@)[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?)*)>/i,
 		replace(match: Match) {
-			// TODO: updateDOM: diffing: handle `"`
 			const link = escapeHTML(match[1])
-			const isEmail = match[2] === '@'
+			const href = (match[2] === '@' ? 'mailto:' : '') + link.replaceAll('"', '&quot;')
 
-			return `<span class="md-autolink"><span class="md-mark">&lt;</span><a href=${(isEmail ? 'mailto:' : '') + link}>${link}</a><span class="md-mark">&gt;</span></span>`
+			return `<span class="md-autolink"><span class="md-mark">&lt;</span><a href="${href}">${link}</a><span class="md-mark">&gt;</span></span>`
 		}
 	},
 	InlineCode: {

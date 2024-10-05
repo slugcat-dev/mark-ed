@@ -1,4 +1,4 @@
-import { defaultLineGrammar, defaultInlineGrammar, type LineGrammar, type InlineGrammar, type BlockRule } from './grammar'
+import { type LineGrammar, type InlineGrammar, type BlockRule } from './grammar'
 
 export interface MarkdownParserConfig {
 	lineGrammar: LineGrammar
