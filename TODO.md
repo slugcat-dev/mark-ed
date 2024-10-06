@@ -2,7 +2,6 @@
 ## Features
 - change event and history
 - make links clickable
-- smooth caret
 
 ## Bugs
 - programmatically setting the selection doesn't scroll into view

@@ -275,7 +275,7 @@ export class Editor {
 		this.prevSelection.start = selection.start
 		this.prevSelection.end = selection.end
 		this.prevSelection.focused = this.focused
-		this.prevSelection.direction = this.getSelectionDirection()
+		this.prevSelection.direction = selection.direction
 
 		this.hideMarks(selection)
 	}
@@ -520,11 +520,11 @@ export class Editor {
 	 * @returns An object with the `start` and `end` positions of the selection,
 	 * as character offset from the start of the content.
 	 */
-	getSelection(): EditorSelection {
+	getSelection(): EditorSelection & { collapsed: boolean, direction: 'forward' | 'backward' | 'none' } {
 		const selection = document.getSelection()
 
 		if (!selection || selection.rangeCount === 0)
-			return { start: 0, end: 0 }
+			return { start: 0, end: 0, collapsed: true, direction: 'none' }
 
 		const range = selection.getRangeAt(0)
 		const toStartRange = range.cloneRange()
@@ -548,9 +548,16 @@ export class Editor {
 			return Math.max(0, length + lines - 1)
 		}
 
+		const start = Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length))
+		const end = Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
+		const collapsed = start === end
+		const direction = this.getSelectionDirection()
+
 		return {
-			start: Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length)),
-			end: Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
+			start,
+			end,
+			collapsed,
+			direction
 		}
 	}
 
@@ -581,9 +588,16 @@ export class Editor {
 	/**
 	 * Set the text selection within the editor.
 	 *
+	 * @param selection - The new `start` and `end` position of the selection.
+	 */
+	setSelection(selection: number): void
+
+	/**
+	 * Set the text selection within the editor.
+	 *
 	 * @param selection - An object specifying the new `start` and `end` positions.
 	 */
-	setSelection(selection: EditorSelection): void
+	setSelection(selection: EditorSelection & { direction?: 'forward' | 'backward' | 'none' }): void
 
 	/**
 	 * Set the text selection within the editor.
@@ -594,14 +608,13 @@ export class Editor {
 	 */
 	setSelection(selection: Omit<EditorSelection, 'start'> | Omit<EditorSelection, 'end'>, collapse?: boolean): void
 
-	/**
-	 * Set the text selection within the editor.
-	 *
-	 * @param selection - The new `start` and `end` position of the selection.
-	 */
-	setSelection(selection: number): void
-
-	setSelection(selection: EditorSelection | Omit<EditorSelection, 'start'> | Omit<EditorSelection, 'end'> | number, collapse = true): void {
+	setSelection(
+		selection: number
+			| EditorSelection & { direction?: 'forward' | 'backward' | 'none' }
+			| Omit<EditorSelection, 'start'>
+			| Omit<EditorSelection, 'end'>,
+		collapse = true
+	): void {
 		const documentSelection = document.getSelection()
 
 		if (!documentSelection)
@@ -617,6 +630,7 @@ export class Editor {
 		else if ('start' in selection && 'end' in selection) {
 			start = selection.start
 			end = selection.end
+			direction = selection.direction ?? null
 		} else {
 			if (collapse) {
 				if ('end' in selection) start = end = selection.end

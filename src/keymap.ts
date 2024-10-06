@@ -213,17 +213,24 @@ function deleteChar(editor: Editor): void {
 
 function selectLineStart(editor: Editor, collapse: boolean): void {
 	const selection = editor.getSelection()
-	const line = editor.lineAt(selection.start)
+	const forward = selection.direction === 'forward'
+	const line = editor.lineAt(forward ? selection.end : selection.start)
 	const lineType = editor.markdown.lineTypes[line.num]
-	let start = line.from
+	let pos = line.from
 
 	// Move the cursor to the start of a list item or block quote
 	if (/BlockQuote|List/.test(lineType) && collapse) {
 		const from = line.from + line.text.match(quoteListRegex)![0].length
 
 		if (selection.start > from)
-			start = from
+			pos = from
 	}
 
-	editor.setSelection({ start }, collapse)
+	if (forward) {
+		if (collapse || selection.start <= line.from)
+			editor.setSelection({ end: pos }, collapse)
+		else
+			editor.setSelection({ start: pos, end: selection.start, direction: 'backward' })
+	} else
+		editor.setSelection({ start: pos }, collapse)
 }
