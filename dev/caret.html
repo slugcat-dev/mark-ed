@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script type="module" src="caret.ts"></script>
+		<link rel="stylesheet" href="style.css">
+		<style>
+			.editor-wrapper {
+				position: relative;
+			}
+
+			.md-editor {
+				caret-color: transparent;
+
+				::selection {
+					background-color: transparent;
+				}
+			}
+
+			#selectionLayer {
+				position: absolute;
+				inset: 0;
+				pointer-events: none;
+			}
+
+			#caret {
+				display: none;
+				position: absolute;
+				width: 2px;
+				margin-left: -1px;
+				background-color: currentcolor;
+				animation: blink-1 1s steps(1) infinite;
+
+				&.visible {
+					display: block;
+					transition: all 50ms;
+				}
+			}
+
+			.selection-rect {
+				position: absolute;
+				min-width: 2px;
+				background-color: #28f4;
+
+				.label {
+					position: absolute;
+					top: -1rem;
+					padding-inline: .25rem;
+					font-size: .75rem;
+					font-weight: bold;
+					color: white;
+					border-radius: .25rem;
+				}
+			}
+
+			@keyframes blink-1 {
+				50% { opacity: 0; }
+			}
+
+			@keyframes blink-2 {
+				50% { opacity: 0; }
+			}
+		</style>
+		<title>mark-ed</title>
+	</head>
+	<body>
+		<div class="editor-wrapper">
+			<div
+				id="editor"
+				role="textbox"
+				aria-multiline="true"
+				spellcheck="false"
+				autocorrect="off"
+				autocapitalize="off"
+				data-placeholder="Write something..."
+			></div>
+			<div id="selectionLayer">
+				<div id="caret"></div>
+			</div>
+		</div>
+	</body>
+</html>

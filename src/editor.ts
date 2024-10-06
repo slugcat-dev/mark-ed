@@ -658,10 +658,10 @@ export class Editor {
 		end = Math.max(0, Math.min(end, this.content.length))
 		start = Math.max(0, Math.min(start, end))
 
-		function findNodeAndOffset(targetLength: number, lineDiv: Element): [Node, number] {
-			const walker = document.createTreeWalker(lineDiv, NodeFilter.SHOW_TEXT)
-			let node
+		function findNodeAndOffset(targetLength: number, lineElm: Element): [Node, number] {
+			const walker = document.createTreeWalker(lineElm, NodeFilter.SHOW_TEXT)
 			let length = 0
+			let node
 
 			while (node = walker.nextNode()) {
 				const nodeLength = (node as Text).length
@@ -672,7 +672,7 @@ export class Editor {
 				length += nodeLength
 			}
 
-			return [lineDiv, 0]
+			return [lineElm, 0]
 		}
 
 		let currentLength = 0
@@ -681,15 +681,15 @@ export class Editor {
 		let startNode
 		let endNode
 
-		for (const lineDiv of this.root.children) {
-			const isEmptyLine = lineDiv.firstChild instanceof HTMLBRElement
-			const lineLength = lineDiv.textContent?.length ?? 0
+		for (const lineElm of this.root.children) {
+			const isEmptyLine = lineElm.firstChild instanceof HTMLBRElement
+			const lineLength = lineElm.textContent?.length ?? 0
 
 			if (!startNode && currentLength + lineLength >= start)
-				[startNode, startOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(start - currentLength, lineDiv)
+				[startNode, startOffset] = isEmptyLine ? [lineElm, 0] : findNodeAndOffset(start - currentLength, lineElm)
 
 			if (!endNode && currentLength + lineLength >= end) {
-				[endNode, endOffset] = isEmptyLine ? [lineDiv, 0] : findNodeAndOffset(end - currentLength, lineDiv)
+				[endNode, endOffset] = isEmptyLine ? [lineElm, 0] : findNodeAndOffset(end - currentLength, lineElm)
 
 				break
 			}
