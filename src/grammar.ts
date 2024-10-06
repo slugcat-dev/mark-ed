@@ -90,7 +90,6 @@ export const defaultLineGrammar: LineGrammar = {
 
 			return `<code class="md-code-block">${spaceBefore}<span class="md-mark">${mark}</span>${spaceAfter}</code>`
 		},
-		// TODO: pass lines to a code highlighter
 		line: (line) => `<code class="md-code-block">${fixLine(line)}</code>`
 	},
 	BlockQuote: {
@@ -200,7 +199,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 			for (;;) {
 				const last = urlEnd[end - 1]
 
-				if (/[!"'*,.:?_~]/.test(last) || (last === ')' && count(')') > count('(')))
+				if (/[!"'*,.:;?_~]/.test(last) || (last === ')' && count(')') > count('(')))
 					end--
 				else
 					break

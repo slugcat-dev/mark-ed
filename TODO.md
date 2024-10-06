@@ -1,39 +1,52 @@
-# TODO
+# Editor
 ## Features
-- history
-- highlighting in markdown code blocks
-- make links clicky bois aswell
-- change event
+- change event and history
+- make links clickable
+- smooth caret
+
+## Bugs
+- programmatically setting the selection doesn't scroll into view
 
 ## Browser Quirks
-- chrome, android: keydown event not fired on backspace
-	https://github.com/codemirror/view/blob/main/src/input.ts#L898
-	https://github.com/codemirror/view/blob/main/src/domobserver.ts#L296
-- safari, ios: checkbox no clicky
+- safari, ios: checkboxes are not clickable
+- chrome, android: keydown event not fired on backspace, see [this](https://github.com/codemirror/view/blob/main/src/input.ts#L898) and [this](https://github.com/codemirror/view/blob/main/src/domobserver.ts#L296)
 - chrome: set editor content to
 	```
 	Normal line
 	> Quote or heading with http://link
 	```
-	ctrl + a, ctrl + x inserts extra blank line
+	<kbd>Ctrl</kbd><kbd>A</kbd>, <kbd>Ctrl</kbd><kbd>X</kbd> inserts extra blank line
 
-## Backlog
-- custom cursor
-- reconfigure
+# MarkdownParser
+## Markdown Support
+[Markdown Documentation](https://github.github.com/gfm/)
 
-## Other
-- `mergeDefaults` toggle for `EditorConfig`, currently need `delete defaultLineGrammar.ATXHeading`
-- scrollIntoView
+### Features
+- atx headings: closing mark
+- fenced code blocks: syntax highlighting
 
-## Project
-- default eslint
-- default stylesheet
+### Not Implemented Yet
+- links and images
+- link reference definitions
+- hard line breaks
+- entity and numeric character references
 
-# Markdown Support
-https://github.github.com/gfm/
+### Won't Implement For Now
+- tables
+- setext headings
+- fenced code blocks with `~~~`
+- indented code blocks
 
-- Entity and numeric character references
-- Links
-- Images
-- Link reference definitions
-- Tables
+### Won't Implement
+- html
+- nested blocks
+- lazyness
+
+# Documentation
+- styling
+- guides
+	- scrollable wrapper
+- custom keybinds
+- custom markdown rules
+- block hide rules
+- proper api documentation

@@ -47,6 +47,7 @@ const defaultConfig: EditorConfig = {
 export class Editor {
 	private keymap: CompiledKeybind[]
 	private handlers = {
+		beforeinput: this.handleBeforeInput.bind(this),
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
@@ -151,6 +152,7 @@ export class Editor {
 		this.root.style.webkitUserModify = 'read-write-plaintext-only'
 
 		// Add event listeners
+		this.root.addEventListener('beforeinput', this.handlers.beforeinput)
 		this.root.addEventListener('input', this.handlers.input)
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
@@ -164,6 +166,11 @@ export class Editor {
 			this.root.addEventListener('focus', this.handlers.selection)
 			this.root.addEventListener('blur', this.handlers.selection)
 		}
+	}
+
+	private handleBeforeInput(event: InputEvent): void {
+		// For history: historyUndo, historyRedo
+		// Possible fix for backspace on Android: deleteContentBackward
 	}
 
 	private handleInput(event: Event): void {
@@ -723,6 +730,7 @@ export class Editor {
 	 * Unregister all event listeners and clean up the editor.
 	 */
 	destroy(): void {
+		this.root.removeEventListener('beforeinput', this.handlers.beforeinput)
 		this.root.removeEventListener('input', this.handlers.input)
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)

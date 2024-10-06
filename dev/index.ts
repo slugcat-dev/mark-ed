@@ -1,7 +1,7 @@
 import { Editor } from '../src/index'
 
 const editor = new Editor('editor', {
-	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n**View on GitHub:**\nhttps://github.com/slugcat-dev/mark-ed',
+	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
 	hideMarks: true,
 	keymap: {
 		'Alt ArrowUp': () => moveLine(true),

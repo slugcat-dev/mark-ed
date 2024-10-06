@@ -56,15 +56,20 @@ export const defaultKeymap: Keymap = {
 		editor.root.blur()
 	},
 
-	// Disable undo / redo, history doesn't work anyways
+	// Disable undo and redo, history doesn't work anyways
 	'CtrlMeta Z': () => {},
 	'CtrlMeta Y': () => {},
+	'CtrlMeta Shift Z': () => {},
 
-	// Other keybinds
+	// Indentation keybinds
 	'Tab': indent,
 	'Shift Tab': outdent,
+
+	// Editing keybinds
 	'Backspace': deleteChar,
 	'Shift Backspace': deleteChar,
+
+	// Navigation keybinds
 	'Home': (editor) => selectLineStart(editor, true),
 	'Shift Home': (editor) => selectLineStart(editor, false)
 }
