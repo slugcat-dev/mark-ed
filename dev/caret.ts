@@ -34,11 +34,11 @@ editor.addEventListener('selectionchange', () => {
 			caretRect.height = lineRect.height - caretHeight
 		}
 
-		const x = caretRect.left - editorRect.left
-		const y = caretRect.top - editorRect.top
+		const x = Math.round(caretRect.left - editorRect.left)
+		const y = Math.round(caretRect.top - editorRect.top)
 
-		caret.style.translate = `${x}px ${y}px`
 		caret.style.height = `${caretRect.height}px`
+		caret.style.translate = `${x}px ${y}px`
 	}
 
 	// Hide the caret if the editor is not focused

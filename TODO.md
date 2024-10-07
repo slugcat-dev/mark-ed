@@ -1,7 +1,5 @@
 # Editor
 ## Features
-- selectionchange event
-	- enter doesnt trigger selectionchange
 - history
 	- diffing
 	- debounce
@@ -24,7 +22,6 @@
 [Markdown Documentation](https://github.github.com/gfm/)
 
 ### Features
-- atx headings: closing mark
 - fenced code blocks: syntax highlighting
 
 ### Not Implemented Yet

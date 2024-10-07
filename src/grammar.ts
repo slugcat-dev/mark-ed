@@ -49,14 +49,15 @@ export const defaultLineGrammar: LineGrammar = {
 		}
 	},
 	ATXHeading: {
-		regex: /^(?<indent>[\t ]*)(?<mark>#{1,6} )(?<text>.*)$/,
+		regex: /^(?<indent>[\t ]*)(?<mark>#{1,6} )(?<text>.*?)(?<end>(?:\s+#+\s*)?)$/,
 		replace(match, parser) {
 			const indent = match.groups!.indent
 			const mark = match.groups!.mark
-			const text = parser.parseInline(match.groups!.text)
 			const level = mark.length - 1
+			const text = parser.parseInline(match.groups!.text)
+			const end = match.groups!.end
 
-			return `${indent}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${text}</h${level}>`
+			return `${indent}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${text}${end.length ? `<span class="md-mark">${end}</span>` : ''}</h${level}>`
 		}
 	},
 	CodeBlock: {
