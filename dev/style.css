@@ -12,6 +12,10 @@ body {
 	font-family: 'Roboto', sans-serif;
 }
 
+a {
+	color: blue;
+}
+
 #toggleMarks {
 	margin-top: .5rem;
 	padding: .125rem .25rem;
@@ -21,7 +25,7 @@ body {
 
 /* Make the editor scrollable */
 .editor-wrapper {
-	border: 1px solid #ccc;
+	border: 1px solid lightgray;
 	border-radius: .25rem;
 	overflow: auto;
 
@@ -50,7 +54,7 @@ body {
 }
 
 .md-mark {
-	color: #888;
+	color: color-mix(in srgb, currentcolor, transparent 50%);
 }
 
 .md-hidden {
@@ -72,7 +76,7 @@ body {
 		left: 0;
 		width: 100%;
 		height: 1px;
-		background-color: #ccc;
+		background-color: lightgray;
 	}
 }
 
@@ -86,7 +90,7 @@ body {
 	font-size: .75rem;
 	line-height: 1rem;
 	font-weight: bold;
-	color: #666;
+	color: dimgray;
 }
 
 .md-code,
@@ -148,7 +152,7 @@ body {
 			top: -1px;
 			width: 3px;
 			height: calc(100% + 2px);
-			background-color: #ccc;
+			background-color: lightgray;
 			border-radius: .125rem;
 		}
 	}

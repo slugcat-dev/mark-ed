@@ -1,7 +1,10 @@
-import { MarkdownParser } from '../src/markdown'
+import { MarkdownParser, defaultInlineGrammar, defaultLineGrammar } from '../src'
 
 const output = document.getElementById('output')!
-const md = new MarkdownParser()
+const md = new MarkdownParser({
+	lineGrammar: defaultLineGrammar,
+	inlineGrammar: defaultInlineGrammar
+})
 const lines = [
 	'# Heading 1',
 	'## Heading 2',
@@ -10,6 +13,8 @@ const lines = [
 	'##### Heading 5',
 	'###### Heading 6',
 	'',
+	'---',
+	'',
 	'```script',
 	'code();',
 	'```',
@@ -17,7 +22,8 @@ const lines = [
 	'> Block',
 	'> Quote',
 	'',
-	'---',
+	'- [x] Task',
+	'- [ ] List',
 	'',
 	'Normal Text',
 	'',
@@ -31,7 +37,7 @@ const lines = [
 	'',
 	'<ssh://mainframe>',
 	'http://localhost/',
-	'me@mail.com',
+	'me@mail.com'
 ]
 
 for (const line of md.parse(lines)) {

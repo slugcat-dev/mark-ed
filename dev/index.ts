@@ -1,4 +1,4 @@
-import { Editor } from '../src/index'
+import { Editor, type MarkdownParser, type Match } from '../src'
 
 const editor = new Editor('editor', {
 	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
@@ -11,7 +11,7 @@ const editor = new Editor('editor', {
 		lineGrammar: {
 			Subtext: {
 				regex: /^(?<indent>[\t ]*)(?<mark>-# )(?<text>.*)$/,
-				replace(match, parser) {
+				replace(match: Match, parser: MarkdownParser): string {
 					const indent = match.groups!.indent
 					const mark = match.groups!.mark
 					const text = parser.parseInline(match.groups!.text)
@@ -23,8 +23,8 @@ const editor = new Editor('editor', {
 	}
 })
 
-function moveLine(up: boolean) {
-	const selection = editor.getSelection()
+function moveLine(up: boolean): void {
+	const selection = editor.selection
 	const startLine = editor.lineAt(selection.start)
 	const endLine = editor.lineAt(selection.end)
 
@@ -42,17 +42,12 @@ function moveLine(up: boolean) {
 	editor.lines.splice(startLine.num - (up ? 1 : -1), 0, ...linesToMove)
 
 	// Also move the selection
-	if (up) {
-		const start = lineBefore.from + (selection.start - startLine.from)
-		const end = start + (selection.end - selection.start)
+	const start = up
+		? lineBefore.from + (selection.start - startLine.from)
+		: lineBefore.text.length + selection.start + 1
+	const end = start + (selection.end - selection.start)
 
-		editor.updateDOM({ start, end })
-	} else {
-		const start = lineBefore.text.length + selection.start + 1
-		const end = start + (selection.end - selection.start)
-
-		editor.updateDOM({ start, end })
-	}
+	editor.updateDOM({ start, end })
 }
 
 const btn = document.getElementById('toggleMarks')!

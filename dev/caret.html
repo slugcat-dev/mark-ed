@@ -12,45 +12,25 @@
 
 			.md-editor {
 				caret-color: transparent;
-
-				::selection {
-					background-color: transparent;
-				}
 			}
 
-			#selectionLayer {
+			.selection-layer {
 				position: absolute;
 				inset: 0;
 				pointer-events: none;
-			}
 
-			#caret {
-				display: none;
-				position: absolute;
-				width: 2px;
-				margin-left: -1px;
-				background-color: currentcolor;
-				animation: blink-1 1s steps(1) infinite;
-
-				&.visible {
-					display: block;
-					transition: all 50ms;
-				}
-			}
-
-			.selection-rect {
-				position: absolute;
-				min-width: 2px;
-				background-color: #28f4;
-
-				.label {
+				.caret {
+					display: none;
 					position: absolute;
-					top: -1rem;
-					padding-inline: .25rem;
-					font-size: .75rem;
-					font-weight: bold;
-					color: white;
-					border-radius: .25rem;
+					width: 2px;
+					left: -1px;
+					background-color: currentcolor;
+					animation: blink-1 1s steps(1) infinite;
+
+					&.visible {
+						display: initial;
+						transition: translate 50ms;
+					}
 				}
 			}
 
@@ -75,8 +55,8 @@
 				autocapitalize="off"
 				data-placeholder="Write something..."
 			></div>
-			<div id="selectionLayer">
-				<div id="caret"></div>
+			<div class="selection-layer">
+				<div class="caret"></div>
 			</div>
 		</div>
 	</body>
