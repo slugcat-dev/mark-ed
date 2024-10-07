@@ -28,6 +28,13 @@ export interface Line {
 	text: string
 }
 
+interface HistoryState {
+	lines: string[]
+	selection: EditorSelection & {
+		direction: 'forward' | 'backward' | 'none'
+	}
+}
+
 const defaultConfig: EditorConfig = {
 	content: '',
 	readonly: false,
@@ -45,6 +52,7 @@ const defaultConfig: EditorConfig = {
 }
 
 export class Editor {
+	private listeners: Record<string, (() => any)[]> = {}
 	private keymap: CompiledKeybind[]
 	private handlers = {
 		beforeinput: this.handleBeforeInput.bind(this),
@@ -61,13 +69,14 @@ export class Editor {
 		focused: false,
 		direction: 'none'
 	}
+	private undoStack: HistoryState[] = []
+	private redoStack: HistoryState[] = []
 	readonly root: HTMLElement
 	readonly config: EditorConfig
 	/**
 	 * The `MarkdownParser` instance the editor uses.
 	 */
 	readonly markdown: MarkdownParser
-
 	/**
 	 * The lines that the editor content consists of.
 	 * If you modify this value, you need to call `editor.updateDOM()` manually.
@@ -272,12 +281,22 @@ export class Editor {
 		)
 			return
 
+		// Update hidden Markdown syntax if the selection changed
+		this.hideMarks(selection)
+
+		// Update the selection of current state in the undo stack
+		if (this.undoStack[this.undoStack.length - 1]) {
+			this.undoStack[this.undoStack.length - 1].selection = {
+				start: selection.start,
+				end: selection.end,
+				direction: selection.direction
+			}
+		}
+
 		this.prevSelection.start = selection.start
 		this.prevSelection.end = selection.end
 		this.prevSelection.focused = this.focused
 		this.prevSelection.direction = selection.direction
-
-		this.hideMarks(selection)
 	}
 
 	/**
@@ -306,7 +325,7 @@ export class Editor {
 	 *
 	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
 	 */
-	updateDOM(overwriteSelection?: EditorSelection): void {
+	updateDOM(overwriteSelection?: EditorSelection, pushUndo = true): void {
 		const before = Array.from(this.root.children).map((lineElm) => {
 			const elm = lineElm.cloneNode(true) as HTMLElement
 
@@ -372,8 +391,24 @@ export class Editor {
 
 		this.hideMarks(selection)
 
+		// Push the new state to the undo stack
+		if (pushUndo) {
+			this.undoStack.push({
+				lines: [...this.lines],
+				selection: {
+					start: selection.start,
+					end: selection.end,
+					direction: this.getSelectionDirection()
+				}
+			})
+
+			this.redoStack = []
+		}
+
 		if (this.focused)
 			this.setSelection(selection)
+
+		this.dispatchEvent('change')
 	}
 
 	/**
@@ -428,6 +463,31 @@ export class Editor {
 				blockVisible = false
 			}
 		}
+	}
+
+	undo(): void {
+		if (this.undoStack.length < 2)
+			return
+
+		const currectState = this.undoStack.pop()!
+		const prevState = this.undoStack[this.undoStack.length - 1]
+
+		this.lines = prevState.lines
+
+		this.updateDOM(prevState.selection, false)
+		this.redoStack.push(currectState)
+	}
+
+	redo(): void {
+		const prevState = this.redoStack.pop()
+
+		if (!prevState)
+			return
+
+		this.lines = prevState.lines
+
+		this.updateDOM(prevState.selection, false)
+		this.undoStack.push(prevState)
 	}
 
 	/**
@@ -738,6 +798,20 @@ export class Editor {
 		}
 
 		return offset - 1
+	}
+
+	addEventListener(type: string, listener: () => any): void {
+		if (!this.listeners[type])
+			this.listeners[type] = []
+
+		this.listeners[type].push(listener)
+	}
+
+	private dispatchEvent(type: string): void {
+		if (!this.listeners[type])
+			return
+
+		this.listeners[type].forEach((listener) => listener())
 	}
 
 	/**

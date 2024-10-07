@@ -1,7 +1,11 @@
 # Editor
 ## Features
-- change event and history
-- make links clickable
+- selectionchange event
+	- enter doesnt trigger selectionchange
+- history
+	- intercept beforeinput
+	- diffing
+	- debounce
 
 ## Bugs
 - programmatically setting the selection doesn't scroll into view

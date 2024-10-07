@@ -9,15 +9,9 @@ const editor = new Editor('editor', {
 const caret = document.getElementById('caret')!
 const selectionLayer = document.getElementById('selectionLayer')!
 
-renderSelectionRange(4, 64, 'Lukas')
-
 document.addEventListener('selectionchange', () => {
-	// Remove old selection rects
-	selectionLayer.querySelectorAll('.selection-rect').forEach((elm) => elm.remove())
-
 	renderCaret()
 	renderSelection()
-	renderSelectionRange(4, 64, 'Lukas')
 })
 
 function renderCaret() {
@@ -64,6 +58,9 @@ function renderCaret() {
 }
 
 function renderSelection() {
+	// Remove old selection rects
+	selectionLayer.querySelectorAll('.selection-rect').forEach((elm) => elm.remove())
+
 	const selection = editor.getSelection()
 
 	if (selection.collapsed)

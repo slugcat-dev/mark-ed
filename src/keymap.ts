@@ -56,10 +56,10 @@ export const defaultKeymap: Keymap = {
 		editor.root.blur()
 	},
 
-	// Disable undo and redo, history doesn't work anyways
-	'CtrlMeta Z': () => {},
-	'CtrlMeta Y': () => {},
-	'CtrlMeta Shift Z': () => {},
+	// History
+	'CtrlMeta Z': (editor) => editor.undo(),
+	'CtrlMeta Y': (editor) => editor.redo(),
+	'CtrlMeta Shift Z': (editor) => editor.redo(),
 
 	// Indentation keybinds
 	'Tab': indent,
