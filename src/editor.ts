@@ -178,8 +178,20 @@ export class Editor {
 	}
 
 	private handleBeforeInput(event: InputEvent): void {
-		// For history: historyUndo, historyRedo
-		// Possible fix for backspace on Android: deleteContentBackward
+		if (event.inputType.startsWith('history')) {
+			event.preventDefault()
+
+			if (event.inputType === 'historyUndo')
+				this.undo()
+			else if (event.inputType === 'historyRedo')
+				this.redo()
+
+			return
+		}
+
+		// Possible fix for backspace on Android
+		if (event.inputType === 'deleteContentBackward')
+			return
 	}
 
 	private handleInput(event: Event): void {

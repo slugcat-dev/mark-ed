@@ -3,7 +3,6 @@
 - selectionchange event
 	- enter doesnt trigger selectionchange
 - history
-	- intercept beforeinput
 	- diffing
 	- debounce
 
