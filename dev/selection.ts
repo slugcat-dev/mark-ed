@@ -10,7 +10,7 @@ const selectionLayer = editor.root.parentElement!.querySelector('.selection-laye
 
 editor.addEventListener('selectionchange', () => {
 	// Remove old selection rects
-	selectionLayer.querySelectorAll('.selection-rect').forEach((elm) => elm.remove())
+	selectionLayer.querySelectorAll('.selection-rect').forEach(elm => elm.remove())
 
 	if (editor.focused)
 		renderSelectionRange(editor.selection.start, editor.selection.end)
@@ -32,7 +32,6 @@ function renderSelectionRange(start: number, end: number, id = 'client'): void {
 		let top = lineRect.top - editorRect.top
 		let height = lineRect.height
 		let rect: DOMRect
-		let width: number
 
 		if (lineNum === startLine.num) {
 			if (startLine.num === endLine.num)
@@ -51,8 +50,6 @@ function renderSelectionRange(start: number, end: number, id = 'client'): void {
 			rect = range.getBoundingClientRect()
 		}
 
-		width = rect.width
-
 		const elm = document.createElement('div')
 
 		elm.classList.add('selection-rect')
@@ -70,7 +67,7 @@ function renderSelectionRange(start: number, end: number, id = 'client'): void {
 
 		elm.style.top = `${top}px`
 		elm.style.left = `${left}px`
-		elm.style.width = `${width}px`
+		elm.style.width = `${rect.width}px`
 		elm.style.height = `${height}px`
 
 		// Color different selections differently
@@ -129,7 +126,7 @@ function strToHue(str: string): number {
 	let hash = 0
 
 	for (let i = 0; i < str.length; i++)
-			hash = str.charCodeAt(i) + ((hash << 8) - hash)
+		hash = str.charCodeAt(i) + ((hash << 8) - hash)
 
 	return hash % 360
 }

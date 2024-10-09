@@ -28,11 +28,15 @@ export interface Line {
 	text: string
 }
 
+interface EditorState {
+	lines: string[]
+	focused: boolean
+	selection: EditorSelection & { direction: 'forward' | 'backward' | 'none' }
+}
+
 interface HistoryState {
 	lines: string[]
-	selection: EditorSelection & {
-		direction: 'forward' | 'backward' | 'none'
-	}
+	selection: EditorState['selection']
 }
 
 const defaultConfig: EditorConfig = {
@@ -61,13 +65,16 @@ export class Editor {
 		paste: this.handlePaste.bind(this),
 		mousedown: this.handleMousedown.bind(this),
 		click: this.handleClick.bind(this),
-		selection: this.handleSelection.bind(this)
+		selection: () => this.handleSelection()
 	}
-	private prevSelection = {
-		start: 0,
-		end: 0,
+	private state: EditorState = {
+		lines: [],
 		focused: false,
-		direction: 'none'
+		selection: {
+			start: 0,
+			end: 0,
+			direction: 'none'
+		}
 	}
 	private undoStack: HistoryState[] = []
 	private redoStack: HistoryState[] = []
@@ -77,11 +84,18 @@ export class Editor {
 	 * The `MarkdownParser` instance the editor uses.
 	 */
 	readonly markdown: MarkdownParser
+
 	/**
 	 * The lines that the editor content consists of.
 	 * If you modify this value, you need to call `editor.updateDOM()` manually.
 	 */
-	lines: string[] = []
+	get lines(): string[] {
+		return this.state.lines
+	}
+
+	set lines(lines: string[]) {
+		this.state.lines = lines
+	}
 
 	get content(): string {
 		return this.lines.join('\n')
@@ -92,6 +106,14 @@ export class Editor {
 
 		// Update the DOM and move the cursor to the end
 		this.updateDOM(Editor.selectionFrom(content.length))
+	}
+
+	get selection(): EditorSelection & { direction: 'forward' | 'backward' | 'none' } {
+		return {
+			start: this.state.selection.start,
+			end: this.state.selection.end,
+			direction: this.state.selection.direction
+		}
 	}
 
 	/**
@@ -241,7 +263,11 @@ export class Editor {
 
 		event.preventDefault()
 
-		const selection = document.getSelection()!
+		const selection = document.getSelection()
+
+		if (!selection)
+			return
+
 		const lineElm = (event.target as Element).closest('.md-line')!
 		const range = document.createRange()
 
@@ -283,13 +309,13 @@ export class Editor {
 		return true
 	}
 
-	private handleSelection(): void {
-		const selection = this.getSelection()
+	private handleSelection(selection?: EditorState['selection']): void {
+		selection = selection ?? this.getSelection()
 
 		if (
-			this.prevSelection.start === selection.start
-			&& this.prevSelection.end === selection.end
-			&& this.prevSelection.focused === this.focused
+			this.state.focused === this.focused
+			&& this.state.selection.start === selection.start
+			&& this.state.selection.end === selection.end
 		)
 			return
 
@@ -305,10 +331,12 @@ export class Editor {
 			}
 		}
 
-		this.prevSelection.start = selection.start
-		this.prevSelection.end = selection.end
-		this.prevSelection.focused = this.focused
-		this.prevSelection.direction = selection.direction
+		this.state.focused = this.focused
+		this.state.selection.start = selection.start
+		this.state.selection.end = selection.end
+		this.state.selection.direction = selection.direction
+
+		this.dispatchEvent('selectionchange')
 	}
 
 	/**
@@ -337,7 +365,7 @@ export class Editor {
 	 *
 	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
 	 */
-	updateDOM(overwriteSelection?: EditorSelection, pushUndo = true): void {
+	updateDOM(overwriteSelection?: EditorSelection & { direction?: 'forward' | 'backward' | 'none' }, pushUndo = true): void {
 		const before = Array.from(this.root.children).map((lineElm) => {
 			const elm = lineElm.cloneNode(true) as HTMLElement
 
@@ -377,17 +405,17 @@ export class Editor {
 			// Remove all children in the diff range
 			for (let i = lastChangedLine - Math.max(delta, 0); i >= firstChangedLine; i--) {
 				if (this.root.children[i])
-						this.root.children[i].remove()
+					this.root.children[i].remove()
 			}
 
 			// Add changed lines to a fragment
-			const fragment = document.createDocumentFragment();
+			const fragment = document.createDocumentFragment()
 
 			for (let i = firstChangedLine; i <= lastChangedLine + Math.min(delta, 0); i++) {
 				const line = after[i]
 
 				if (line === undefined)
-						continue
+					continue
 
 				const lineElm = document.createElement('div')
 
@@ -410,7 +438,7 @@ export class Editor {
 				selection: {
 					start: selection.start,
 					end: selection.end,
-					direction: this.getSelectionDirection()
+					direction: selection.direction ?? this.selection.direction
 				}
 			})
 
@@ -429,7 +457,7 @@ export class Editor {
 	 */
 	private hideMarks(selection: EditorSelection): void {
 		if (!this.config.hideMarks)
-			return this.root.querySelectorAll('.md-hidden').forEach((mark) => mark.classList.remove('md-hidden'))
+			return this.root.querySelectorAll('.md-hidden').forEach(mark => mark.classList.remove('md-hidden'))
 
 		let blockMarks = []
 		let blockVisible = false
@@ -469,7 +497,7 @@ export class Editor {
 
 			// Toggle the visibility of all block marks
 			if (endBlock && blockMarks.length) {
-				blockMarks.forEach((mark) => mark.classList.toggle('md-hidden', !blockVisible))
+				blockMarks.forEach(mark => mark.classList.toggle('md-hidden', !blockVisible))
 
 				blockMarks = []
 				blockVisible = false
@@ -505,7 +533,7 @@ export class Editor {
 	/**
 	 * Get a line by number.
 	 *
-	 * @returns An object holding the positions and text of the line.
+	 * @returns An object with the position and text of the line.
 	 */
 	line(num: number): Line {
 		if (num < 0 || num >= this.lines.length)
@@ -520,7 +548,7 @@ export class Editor {
 	/**
 	 * Get the line around a specific position in the content.
 	 *
-	 * @returns An object holding the positions and text of the line.
+	 * @returns An object with the position and text of the line.
 	 */
 	lineAt(pos: number): Line {
 		if (pos < 0 || pos > this.content.length)
@@ -547,7 +575,7 @@ export class Editor {
 	 * or replace the currently selected text.
 	 */
 	insertAtSelection(text: string): void {
-		const selection = this.getSelection()
+		const selection = this.selection
 		const content = this.content.slice(0, selection.start)
 			+ this.convertIndentation(text)
 			+ this.content.slice(selection.end)
@@ -574,8 +602,8 @@ export class Editor {
 			if (lineIndent.length) {
 				const newIndent = (
 					this.config.indentWithSpaces
-					? lineIndent.replaceAll('\t', indentSpaces)
-					: lineIndent.replaceAll(indentSpaces, '\t')
+						? lineIndent.replaceAll('\t', indentSpaces)
+						: lineIndent.replaceAll(indentSpaces, '\t')
 				)
 
 				lines.push(newIndent + line.substring(lineIndent.length))
@@ -589,14 +617,14 @@ export class Editor {
 	/**
 	 * Get the current text selection within the editor.
 	 *
-	 * @returns An object with the `start` and `end` positions of the selection,
+	 * @returns An object with the `start` and `end` position of the selection,
 	 * as character offset from the start of the content.
 	 */
-	getSelection(): EditorSelection & { collapsed: boolean, direction: 'forward' | 'backward' | 'none' } {
+	getSelection(): EditorSelection & { direction: 'forward' | 'backward' | 'none' } {
 		const selection = document.getSelection()
 
 		if (!selection || selection.rangeCount === 0)
-			return { start: 0, end: 0, collapsed: true, direction: 'none' }
+			return { start: 0, end: 0, direction: 'none' }
 
 		const range = selection.getRangeAt(0)
 		const toStartRange = range.cloneRange()
@@ -612,7 +640,7 @@ export class Editor {
 			const lines = fragment.children.length
 			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
 			let length = 0
-			let node
+			let node: Node | null
 
 			while (node = walker.nextNode())
 				length += (node as Text).length
@@ -620,56 +648,41 @@ export class Editor {
 			return Math.max(0, length + lines - 1)
 		}
 
+		function getSelectionDirection() {
+			if (!selection)
+				return 'none'
+
+			// Currently only Firefox supports direction
+			if (selection.direction)
+				return selection.direction as 'forward' | 'backward' | 'none'
+
+			if (selection.isCollapsed || selection.anchorNode === null || selection.focusNode === null)
+				return 'none'
+
+			if (selection.anchorNode === selection.focusNode)
+				return selection.anchorOffset < selection.focusOffset ? 'forward' : 'backward'
+
+			const range = document.createRange()
+
+			range.setStart(selection.anchorNode, selection.anchorOffset)
+			range.setEnd(selection.focusNode, selection.focusOffset)
+
+			return range.collapsed ? 'backward' : 'forward'
+		}
+
 		const start = Math.max(0, Math.min(getRangeLength(toStartRange), this.content.length))
 		const end = Math.max(0, Math.min(getRangeLength(toEndRange), this.content.length))
-		const collapsed = start === end
-		const direction = this.getSelectionDirection()
+		const direction = getSelectionDirection()
 
-		return {
-			start,
-			end,
-			collapsed,
-			direction
-		}
-	}
-
-	private getSelectionDirection(): 'forward' | 'backward' | 'none' {
-		const selection = document.getSelection()
-
-		if (!selection)
-			return 'none'
-
-		// Currently only Firefox supports direction
-		if (selection.direction)
-			return selection.direction as 'forward' | 'backward' | 'none'
-
-		if (selection.isCollapsed || selection.anchorNode === null || selection.focusNode === null)
-			return 'none'
-
-		if (selection.anchorNode === selection.focusNode)
-			return selection.anchorOffset < selection.focusOffset ? 'forward' : 'backward'
-
-		const range = document.createRange()
-
-		range.setStart(selection.anchorNode, selection.anchorOffset)
-		range.setEnd(selection.focusNode, selection.focusOffset)
-
-		return range.collapsed ? 'backward' : 'forward'
+		return { start, end, direction }
 	}
 
 	/**
 	 * Set the text selection within the editor.
 	 *
-	 * @param selection - The new `start` and `end` position of the selection.
+	 * @param selection - An object or number specifying the new `start` and `end` position.
 	 */
-	setSelection(selection: number): void
-
-	/**
-	 * Set the text selection within the editor.
-	 *
-	 * @param selection - An object specifying the new `start` and `end` positions.
-	 */
-	setSelection(selection: EditorSelection & { direction?: 'forward' | 'backward' | 'none' }): void
+	setSelection(selection: EditorSelection & { direction?: 'forward' | 'backward' | 'none' } | number): void
 
 	/**
 	 * Set the text selection within the editor.
@@ -692,10 +705,10 @@ export class Editor {
 		if (!documentSelection)
 			return
 
-		// Determine the correct new start and end positions
+		// Determine the correct new start and end position
 		let start = 0
 		let end = 0
-		let direction = null
+		let direction: 'forward' | 'backward' | 'none' | null = null
 
 		if (typeof selection === 'number')
 			start = end = selection
@@ -709,7 +722,7 @@ export class Editor {
 				else start = end = selection.start
 			} else {
 				// Extend the current selection
-				const currentSelection = this.getSelection()
+				const currentSelection = this.selection
 
 				if ('start' in selection) {
 					start = selection.start
@@ -724,7 +737,7 @@ export class Editor {
 		}
 
 		if (direction === null)
-			direction = this.prevSelection.direction
+			direction = this.state.selection.direction
 
 		// Limit the selection to the bounds of the content
 		end = Math.max(0, Math.min(end, this.content.length))
@@ -733,7 +746,7 @@ export class Editor {
 		function findNodeAndOffset(targetLength: number, lineElm: Element): [Node, number] {
 			const walker = document.createTreeWalker(lineElm, NodeFilter.SHOW_TEXT)
 			let length = 0
-			let node
+			let node: Node | null
 
 			while (node = walker.nextNode()) {
 				const nodeLength = (node as Text).length
@@ -775,6 +788,8 @@ export class Editor {
 			else
 				documentSelection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
 		}
+
+		this.handleSelection({ start, end, direction })
 	}
 
 	/**
@@ -782,8 +797,8 @@ export class Editor {
 	*/
 	getNodeOffset(target: Node): number {
 		const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
-		let node
 		let offset = 0
+		let node: Node | null
 
 		function isTarget(node: Node): boolean {
 			while (node) {
@@ -802,7 +817,7 @@ export class Editor {
 				offset++
 			else {
 				if (isTarget(node))
-						break
+					break
 
 				if (node.nodeType === Node.TEXT_NODE)
 					offset += node.textContent?.length ?? 0
@@ -823,7 +838,7 @@ export class Editor {
 		if (!this.listeners[type])
 			return
 
-		this.listeners[type].forEach((listener) => listener())
+		this.listeners[type].forEach(listener => listener())
 	}
 
 	/**

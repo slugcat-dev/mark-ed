@@ -1,4 +1,4 @@
-import { type LineGrammar, type InlineGrammar, type BlockRule } from './grammar'
+import type { BlockRule, InlineGrammar, LineGrammar, Match } from './grammar'
 
 export interface MarkdownParserConfig {
 	lineGrammar: LineGrammar
@@ -17,8 +17,8 @@ export class MarkdownParser {
 	}
 
 	parse(lines: string[]): string[] {
-		let openType = null
-		let openMatch = null
+		let openType: string | null = null
+		let openMatch: Match | null = null
 
 		this.lines = []
 		this.lineTypes = []
@@ -28,12 +28,14 @@ export class MarkdownParser {
 			let lineType = 'Default'
 			let html = this.parseInline(line)
 
-			if (openType) {
+			// Check if there is any open block to continue
+			if (openType && openMatch) {
 				lineType = openType
 
 				const rule = this.lineGrammar[lineType] as BlockRule
-				const close = rule.close(line, openMatch!, this)
+				const close = rule.close(line, openMatch, this)
 
+				// Check if the block can be closed
 				if (close) {
 					openType = null
 					openMatch = null
@@ -41,9 +43,11 @@ export class MarkdownParser {
 				} else
 					html = rule.line(line, this)
 			} else {
+				// Check if a rule matches the current line
 				for (const type in this.lineGrammar) {
 					const rule = this.lineGrammar[type]
 
+					// Match-and-replace rules
 					if ('regex' in rule || 'match' in rule) {
 						const match = 'regex' in rule
 							? rule.regex.exec(line)
@@ -58,6 +62,7 @@ export class MarkdownParser {
 					} else {
 						const open = rule.open(line, this)
 
+						// Check if a new block can be opened
 						if (open) {
 							openType = lineType = type
 							openMatch = open.match
@@ -100,13 +105,13 @@ export class MarkdownParser {
 
 				if ('regex' in rule || 'match' in rule) {
 					const match = 'regex' in rule
-							? rule.regex.exec(str)
-							: rule.match(str)
+						? rule.regex.exec(str)
+						: rule.match(str)
 
 					if (match) {
 						str = str.substring(match[0].length)
-						pos += match[0].length
 						res += rule.replace(match, this)
+						pos += match[0].length
 
 						continue outer
 					}
@@ -166,9 +171,7 @@ export class MarkdownParser {
 							const rule = Object.values(this.inlineGrammar)
 								.filter(rule => 'delimiter' in rule)
 								.sort((a, b) => b.length - a.length)
-								.find(rule => rule.delimiter.includes(delimiter)
-									&& len >= rule.length
-									&& openLen >= rule.length)
+								.find(rule => rule.delimiter.includes(delimiter) && len >= rule.length && openLen >= rule.length)
 
 							if (rule) {
 								res = rule.replace(delimiter.repeat(rule.length), res)
@@ -196,8 +199,8 @@ export class MarkdownParser {
 				if (len && canOpen) {
 					stack.push({
 						delimiter,
-						len,
-						res
+						res,
+						len
 					})
 
 					// The processed output has been pushed on the stack and will be prepended when the stack gets popped

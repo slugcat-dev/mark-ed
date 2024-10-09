@@ -19,8 +19,8 @@ export interface RegexReplaceRule {
 
 export interface BlockRule {
 	open: (line: string, parser: MarkdownParser) => { match: Match, replacement: string } | false
-	close: (line: string, openMatch: Match, parser: MarkdownParser) => string | false
 	line: (line: string, parser: MarkdownParser) => string
+	close: (line: string, openMatch: Match, parser: MarkdownParser) => string | false
 }
 
 export interface DelimiterRule {
@@ -39,79 +39,55 @@ export interface InlineGrammar {
 
 export const defaultLineGrammar: LineGrammar = {
 	ThematicBreak: {
-		regex: /^(?<spaceBefore>\s*)(?<mark>(?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(?<spaceAfter>\s*)$/,
-		replace(match) {
-			const spaceBefore = match.groups!.spaceBefore
-			const spaceAfter = match.groups!.spaceAfter
-			const mark = match.groups!.mark
-
-			return `${spaceBefore}<div class="md-hr"><span class="md-mark">${mark}</span></div>${spaceAfter}`
-		}
+		regex: /^(\s*)((?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(\s*)$/,
+		replace: match => `${match[1]}<div class="md-hr"><span class="md-mark">${match[2]}</span></div>${match[3]}`
 	},
 	ATXHeading: {
-		regex: /^(?<indent>[\t ]*)(?<mark>#{1,6} )(?<text>.*?)(?<end>(?:\s+#+\s*)?)$/,
+		regex: /^([\t ]*)(#{1,6} )(.*?)((?:\s+#+\s*)?)$/,
 		replace(match, parser) {
-			const indent = match.groups!.indent
-			const mark = match.groups!.mark
+			const mark = match[2]
 			const level = mark.length - 1
-			const text = parser.parseInline(match.groups!.text)
-			const end = match.groups!.end
+			const end = match[4].length ? `<span class="md-mark">${match[4]}</span>` : ''
 
-			return `${indent}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${text}${end.length ? `<span class="md-mark">${end}</span>` : ''}</h${level}>`
+			return `${match[1]}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${parser.parseInline(match[3])}${end}</h${level}>`
 		}
 	},
 	CodeBlock: {
 		open(line) {
-			const match = /^(?<indent>[\t ]*)(?<mark>`{3,})(?<space>\s*)(?<lang>[^\s`]*)(?<rest>[^`]*)$/.exec(line)
+			const match = /^([\t ]*)(`{3,})(\s*)([^\s`]*)([^`]*)$/.exec(line)
 
 			if (!match)
 				return false
 
-			const indent = match.groups!.indent
-			const mark = match.groups!.mark
-			const space = match.groups!.space
-			const lang = escapeHTML(match.groups!.lang)
-			const rest = escapeHTML(match.groups!.rest)
+			const lang = match[4] ? `<span class="md-code-lang">${escapeHTML(match[4])}</span>` : ''
 
 			return {
 				match,
-				replacement: `<code class="md-code-block">${indent}<span class="md-mark">${mark}${space}${lang.length ? `<span class="md-code-lang">${lang}</span>` : ''}${rest}</span></code>`
+				replacement: `<code class="md-code-block">${match[1]}<span class="md-mark">${match[2]}${match[3]}${lang}${escapeHTML(match[5])}</span></code>`
 			}
 		},
+		line: line => `<code class="md-code-block">${fixLine(line)}</code>`,
 		close(line, openMatch) {
-			const openMark = openMatch.groups!.mark
-			const match = RegExp(`^(?<spaceBefore>\\s*)(?<mark>\`{${openMark.length},})(?<spaceAfter>\\s*)$`).exec(line)
+			const openMark = openMatch[2]
+			const match = RegExp(`^(\\s*)(\`{${openMark.length},})(\\s*)$`).exec(line)
 
 			if (!match)
 				return false
 
-			const spaceBefore = match.groups!.spaceBefore
-			const spaceAfter = match.groups!.spaceAfter
-			const mark = match.groups!.mark
-
-			return `<code class="md-code-block">${spaceBefore}<span class="md-mark">${mark}</span>${spaceAfter}</code>`
-		},
-		line: (line) => `<code class="md-code-block">${fixLine(line)}</code>`
-	},
-	BlockQuote: {
-		regex: /^(?<indent>[\t ]*)(?<mark>> ?)(?<text>.*)/,
-		replace(match, parser) {
-			const indent = match.groups!.indent
-			const mark = escapeHTML(match.groups!.mark)
-			const text = parser.parseInline(match.groups!.text)
-
-			return `${indent}<div class="md-quote"><span class="md-mark">${mark}</span>${text}</div>`
+			return `<code class="md-code-block">${match[1]}<span class="md-mark">${match[2]}</span>${match[3]}</code>`
 		}
 	},
+	BlockQuote: {
+		regex: /^([\t ]*)(> ?)(.*)/,
+		replace: (match, parser) => `${match[1]}<div class="md-quote"><span class="md-mark">${escapeHTML(match[2])}</span>${parser.parseInline(match[3])}</div>`
+	},
 	TaskList: {
-		regex: /^(?<indent>[\t ]*)(?<mark>[-+*] \[[x ]\] )(?<text>.*)/i,
+		regex: /^([\t ]*)([-+*] \[[x ]\] )(.*)/i,
 		replace: (match, parser) => {
-			const indent = match.groups!.indent
-			const mark = match.groups!.mark
+			const mark = match[2]
 			const checkbox = `<span class="md-checkbox"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
-			const text = parser.parseInline(match.groups!.text)
 
-			return `${indent}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${text}`
+			return `${match[1]}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${parser.parseInline(match[3])}`
 		}
 	},
 	UnorderedList: {
@@ -218,22 +194,22 @@ export const defaultInlineGrammar: InlineGrammar = {
 	Emphasis: {
 		delimiter: '*_',
 		length: 1,
-		replace: inline('i'),
+		replace: inline('i')
 	},
 	StrongEmphasis: {
 		delimiter: '*',
 		length: 2,
-		replace: inline('b'),
+		replace: inline('b')
 	},
 	Underline: {
 		delimiter: '_',
 		length: 2,
-		replace: inline('u'),
+		replace: inline('u')
 	},
 	Strikethrough: {
 		delimiter: '~',
 		length: 2,
-		replace: inline('s'),
+		replace: inline('s')
 	}
 }
 

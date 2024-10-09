@@ -4,24 +4,28 @@ export {
 	type EditorSelection,
 	type Line
 } from './editor'
+
 export {
-	defaultLineGrammar,
+	defaultBlockHideRules,
 	defaultInlineGrammar,
-	type Match,
-	type ReplaceRule,
-	type RegexReplaceRule,
+	defaultLineGrammar,
 	type BlockRule,
 	type DelimiterRule,
+	type InlineGrammar,
 	type LineGrammar,
-	type InlineGrammar
+	type Match,
+	type RegexReplaceRule,
+	type ReplaceRule
 } from './grammar'
+
 export {
 	defaultKeymap,
 	type Keymap
 } from './keymap'
+
 export {
-	MarkdownParser,
 	escapeHTML,
 	fixLine,
+	MarkdownParser,
 	type MarkdownParserConfig
 } from './markdown'

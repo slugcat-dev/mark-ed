@@ -1,4 +1,4 @@
-import { Editor, type MarkdownParser, type Match } from '../src'
+import { Editor } from '../src'
 
 const editor = new Editor('editor', {
 	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
@@ -11,7 +11,7 @@ const editor = new Editor('editor', {
 		lineGrammar: {
 			Subtext: {
 				regex: /^(?<indent>[\t ]*)(?<mark>-# )(?<text>.*)$/,
-				replace(match: Match, parser: MarkdownParser): string {
+				replace(match, parser) {
 					const indent = match.groups!.indent
 					const mark = match.groups!.mark
 					const text = parser.parseInline(match.groups!.text)
@@ -53,7 +53,7 @@ function moveLine(up: boolean): void {
 const btn = document.getElementById('toggleMarks')!
 
 btn.addEventListener('click', () => {
-	let hideMarks = btn.dataset.hideMarks !== 'true'
+	const hideMarks = btn.dataset.hideMarks !== 'true'
 
 	btn.dataset.hideMarks = hideMarks.toString()
 	btn.textContent = `${hideMarks ? 'Show' : 'Hide'} Markdown syntax`
