@@ -29,9 +29,9 @@ export interface Line {
 }
 
 interface EditorState {
-	lines: string[]
 	focused: boolean
 	selection: EditorSelection & { direction: 'forward' | 'backward' | 'none' }
+	timestamp: number
 }
 
 interface HistoryState {
@@ -65,16 +65,16 @@ export class Editor {
 		paste: this.handlePaste.bind(this),
 		mousedown: this.handleMousedown.bind(this),
 		click: this.handleClick.bind(this),
-		selection: () => this.handleSelection()
+		selection: this.handleSelection.bind(this)
 	}
 	private state: EditorState = {
-		lines: [],
 		focused: false,
 		selection: {
 			start: 0,
 			end: 0,
 			direction: 'none'
-		}
+		},
+		timestamp: 0
 	}
 	private undoStack: HistoryState[] = []
 	private redoStack: HistoryState[] = []
@@ -89,13 +89,7 @@ export class Editor {
 	 * The lines that the editor content consists of.
 	 * If you modify this value, you need to call `editor.updateDOM()` manually.
 	 */
-	get lines(): string[] {
-		return this.state.lines
-	}
-
-	set lines(lines: string[]) {
-		this.state.lines = lines
-	}
+	lines: string[] = []
 
 	get content(): string {
 		return this.lines.join('\n')
@@ -163,12 +157,11 @@ export class Editor {
 	private createEditorElement(): void {
 		this.root.classList.add('md-editor')
 
+		this.root.innerHTML = '<div class="md-line"><br></div>'
+
 		// Important for whitespace formatting and to prevent the browser from replacing spaces with `&nbsp;`
 		this.root.style.whiteSpace = this.config.lineWrap ? 'pre-wrap' : 'pre'
 		this.root.style.tabSize = this.config.tabSize.toString()
-
-		if (!this.root.firstChild)
-			this.root.innerHTML = '<div class="md-line"><br></div>'
 
 		if (!this.config.readonly)
 			this.setup()
@@ -309,11 +302,38 @@ export class Editor {
 		return true
 	}
 
-	private handleSelection(selection?: EditorState['selection']): void {
-		selection = selection ?? this.getSelection()
+	private handleSelection(event: Event) {
+		// Prevent updating twice when a selectionchange event follows setSelection
+		if (event instanceof FocusEvent || Date.now() - this.state.timestamp > 10)
+			this.updateState()
+	}
+
+	/**
+	 * Read back the content from the DOM
+	 */
+	private updateLines(): void {
+		// Remove elements that aren't editor lines
+		for (const lineElm of this.root.children) {
+			if (!lineElm.classList.contains('md-line'))
+				lineElm.remove()
+		}
+
+		if (!this.root.firstChild)
+			this.root.innerHTML = '<div class="md-line"><br></div>'
+
+		this.lines = []
+
+		// Using this.root.textContent directly doesn't include line breaks
+		for (const lineElm of this.root.children)
+			this.lines.push(lineElm.textContent ?? '')
+	}
+
+	private updateState(selection = this.getSelection(), force = false): void {
+		this.state.timestamp = Date.now()
 
 		if (
-			this.state.focused === this.focused
+			!force
+			&& this.state.focused === this.focused
 			&& this.state.selection.start === selection.start
 			&& this.state.selection.end === selection.end
 		)
@@ -337,26 +357,6 @@ export class Editor {
 		this.state.selection.direction = selection.direction
 
 		this.dispatchEvent('selectionchange')
-	}
-
-	/**
-	 * Read back the content from the DOM
-	 */
-	private updateLines(): void {
-		// Remove elements that aren't editor lines
-		for (const lineElm of this.root.children) {
-			if (!lineElm.classList.contains('md-line'))
-				lineElm.remove()
-		}
-
-		if (!this.root.firstChild)
-			this.root.innerHTML = '<div class="md-line"><br></div>'
-
-		this.lines = []
-
-		// Using this.root.textContent directly doesn't include line breaks
-		for (const lineElm of this.root.children)
-			this.lines.push(lineElm.textContent ?? '')
 	}
 
 	/**
@@ -616,6 +616,7 @@ export class Editor {
 
 	/**
 	 * Get the current text selection within the editor.
+	 * In most cases you don't need this and `editor.selection` is enough.
 	 *
 	 * @returns An object with the `start` and `end` position of the selection,
 	 * as character offset from the start of the content.
@@ -787,9 +788,9 @@ export class Editor {
 				documentSelection.setBaseAndExtent(endNode, endOffset, startNode, startOffset)
 			else
 				documentSelection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
-		}
 
-		this.handleSelection({ start, end, direction })
+			this.updateState({ start, end, direction }, true)
+		}
 	}
 
 	/**

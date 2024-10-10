@@ -5,7 +5,7 @@ const editor = new Editor('editor', {
 	hideMarks: true,
 	keymap: {
 		'Alt ArrowUp': () => moveLine(true),
-		'Alt ArrowDown': () => moveLine(false),
+		'Alt ArrowDown': () => moveLine(false)
 	},
 	markdown: {
 		lineGrammar: {
