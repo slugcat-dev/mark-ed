@@ -221,3 +221,8 @@ export const defaultBlockHideRules: Record<string, string> = {
 	BlockQuote: '.md-quote > .md-mark',
 	CodeBlock: '.md-code-block > .md-mark'
 }
+
+export const disableRule: ReplaceRule = {
+	match: () => false,
+	replace: () => ''
+}

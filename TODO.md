@@ -1,9 +1,4 @@
 # Editor
-## Features
-- history
-	- diffing
-	- debounce
-
 ## Bugs
 - programmatically setting the selection doesn't scroll into view
 
@@ -23,30 +18,8 @@
 [Markdown Documentation](https://github.github.com/gfm/)
 
 ### Features
-- fenced code blocks: syntax highlighting
-
-### Not Implemented Yet
+- code block syntax highlighting
 - links and images
 - link reference definitions
 - hard line breaks
 - entity and numeric character references
-
-### Won't Implement For Now
-- tables
-- setext headings
-- fenced code blocks with `~~~`
-- indented code blocks
-
-### Won't Implement
-- html
-- nested blocks
-- lazyness
-
-# Documentation
-- styling
-- guides
-	- scrollable wrapper
-- custom keybinds
-- custom markdown rules
-- block hide rules
-- proper api documentation

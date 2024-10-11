@@ -3,10 +3,14 @@ import { Editor } from '../src'
 const editor = new Editor('editor', {
 	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
 	hideMarks: true,
+
+	// Add keybinds to move selected lines up or down with Alt + Arrow Keys
 	keymap: {
 		'Alt ArrowUp': () => moveLine(true),
 		'Alt ArrowDown': () => moveLine(false)
 	},
+
+	// Add a Markdown rule for subtext
 	markdown: {
 		lineGrammar: {
 			Subtext: {
@@ -28,13 +32,14 @@ function moveLine(up: boolean): void {
 	const startLine = editor.lineAt(selection.start)
 	const endLine = editor.lineAt(selection.end)
 
+	// Dont move the first line up or the last line down
 	if (up) {
 		if (startLine.num === 0)
 			return
 	} else if (endLine.num === editor.lines.length - 1)
 		return
 
-	// Move lines
+	// Move selected lines
 	const lineBefore = editor.line(up ? startLine.num - 1 : endLine.num + 1)
 	const linesToMove = editor.lines.slice(startLine.num, endLine.num + 1)
 
@@ -50,6 +55,7 @@ function moveLine(up: boolean): void {
 	editor.updateDOM({ start, end })
 }
 
+// Button to toggle Markdown syntax visibility
 const btn = document.getElementById('toggleMarks')!
 
 btn.addEventListener('click', () => {

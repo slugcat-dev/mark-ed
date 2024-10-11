@@ -9,6 +9,7 @@ export {
 	defaultBlockHideRules,
 	defaultInlineGrammar,
 	defaultLineGrammar,
+	disableRule,
 	type BlockRule,
 	type DelimiterRule,
 	type InlineGrammar,

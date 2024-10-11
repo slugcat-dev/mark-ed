@@ -257,11 +257,11 @@ export class Editor {
 		event.preventDefault()
 
 		const selection = document.getSelection()
+		const lineElm = (event.target as Element).closest('.md-line')
 
-		if (!selection)
+		if (!lineElm || !selection)
 			return
 
-		const lineElm = (event.target as Element).closest('.md-line')!
 		const range = document.createRange()
 
 		range.selectNodeContents(lineElm)
@@ -331,6 +331,7 @@ export class Editor {
 	private updateState(selection = this.getSelection(), force = false): void {
 		this.state.timestamp = Date.now()
 
+		// Only update if the state changed
 		if (
 			!force
 			&& this.state.focused === this.focused
@@ -379,11 +380,11 @@ export class Editor {
 		const delta = after.length - before.length
 
 		// Changing the DOM confuses the browser about where to place the cursor,
-		// so we place it to where it was before after the update
+		// so we place it to where it was before the update
 		const selection = overwriteSelection ?? this.getSelection()
 
 		if (delta === 0) {
-			// No lines added or deleted, only apply changes
+			// No lines added or deleted, apply changes directly
 			for (let i = 0; i < after.length; i++) {
 				if (before[i] !== after[i])
 					this.root.children[i].innerHTML = after[i]

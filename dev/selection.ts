@@ -25,6 +25,7 @@ function renderSelectionRange(start: number, end: number, id = 'client'): void {
 	const editorRect = editor.root.getBoundingClientRect()
 	const collapsed = start === end
 
+	// Calculate all the selection rects
 	for (let lineNum = startLine.num; lineNum <= endLine.num; lineNum++) {
 		const lineElm = editor.root.children[lineNum]
 		const lineRect = lineElm.getBoundingClientRect()
