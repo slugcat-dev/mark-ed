@@ -1,7 +1,7 @@
 import { MarkdownParser, type MarkdownParserConfig } from './markdown'
 import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
 import { defaultBlockHideRules, defaultInlineGrammar, defaultLineGrammar } from './grammar'
-import { defu, isFirefox } from './utils'
+import { defu, isAndroid, isChrome, isFirefox } from './utils'
 
 export interface EditorConfig {
 	content: string
@@ -205,7 +205,7 @@ export class Editor {
 		}
 
 		// Possible fix for backspace on Android
-		if (event.inputType === 'deleteContentBackward')
+		if (isAndroid && isChrome && event.inputType === 'deleteContentBackward')
 			return
 	}
 

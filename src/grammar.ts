@@ -40,7 +40,7 @@ export interface InlineGrammar {
 export const defaultLineGrammar: LineGrammar = {
 	ThematicBreak: {
 		regex: /^(\s*)((?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(\s*)$/,
-		replace: match => `${match[1]}<div class="md-hr"><span class="md-mark">${match[2]}</span></div>${match[3]}`
+		replace: match => `${match[1]}<span class="md-hr"><span class="md-mark">${match[2]}</span></span>${match[3]}`
 	},
 	ATXHeading: {
 		regex: /^([\t ]*)(#{1,6} )(.*?)((?:\s+#+\s*)?)$/,
@@ -49,7 +49,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const level = mark.length - 1
 			const end = match[4].length ? `<span class="md-mark">${match[4]}</span>` : ''
 
-			return `${match[1]}<h${level} class="md-heading"><span class="md-mark">${mark}</span>${parser.parseInline(match[3])}${end}</h${level}>`
+			return `${match[1]}<h${level} class="md-heading" style="display: inline-block"><span class="md-mark">${mark}</span>${parser.parseInline(match[3])}${end}</h${level}>`
 		}
 	},
 	CodeBlock: {
@@ -79,7 +79,7 @@ export const defaultLineGrammar: LineGrammar = {
 	},
 	BlockQuote: {
 		regex: /^([\t ]*)(> ?)(.*)/,
-		replace: (match, parser) => `${match[1]}<div class="md-quote"><span class="md-mark">${escapeHTML(match[2])}</span>${parser.parseInline(match[3])}</div>`
+		replace: (match, parser) => `${match[1]}<span class="md-quote"><span class="md-mark">${escapeHTML(match[2])}</span>${parser.parseInline(match[3])}</span>`
 	},
 	TaskList: {
 		regex: /^([\t ]*)([-+*] \[[x ]\] )(.*)/i,
