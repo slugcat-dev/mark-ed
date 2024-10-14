@@ -3,9 +3,8 @@
 - programmatically setting the selection doesn't scroll into view
 
 ## Browser Quirks
-- safari, ios: checkboxes are not clickable \
-	problem: selection changes before handling click, target is md-mark instead of md-checkbox
 - firefox: checkboxes are not clickable
+- firefox: caret in code blocks
 - chrome, android: keydown event not fired on backspace, see [this](https://github.com/codemirror/view/blob/main/src/input.ts#L898) and [this](https://github.com/codemirror/view/blob/main/src/domobserver.ts#L296)
 - chrome: set editor content to
 	```

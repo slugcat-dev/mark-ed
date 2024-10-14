@@ -63,6 +63,7 @@ export class Editor {
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
+		touchstart: this.handleTouchstart.bind(this),
 		mousedown: this.handleMousedown.bind(this),
 		click: this.handleClick.bind(this),
 		selection: this.handleSelection.bind(this)
@@ -181,6 +182,7 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
+		this.root.addEventListener('touchstart', this.handlers.touchstart)
 		this.root.addEventListener('mousedown', this.handlers.mousedown)
 		this.root.addEventListener('click', this.handlers.click)
 		document.addEventListener('selectionchange', this.handlers.selection)
@@ -246,27 +248,22 @@ export class Editor {
 		this.insertAtSelection(text)
 	}
 
+	private handleTouchstart(event: TouchEvent) {
+		this.toggleCheckbox(event)
+	}
+
 	private handleMousedown(event: MouseEvent): void {
 		if (this.toggleCheckbox(event, false))
 			return
 
 		// Workaround for a bug in Firefox where inline elements prevent line selection on tripleclick
-		if (event.detail % 3 !== 0)
-			return
+		if (event.detail % 3 === 0) {
+			event.preventDefault()
 
-		event.preventDefault()
+			const line = this.lineAt(this.selection.start)
 
-		const selection = document.getSelection()
-		const lineElm = (event.target as Element).closest('.md-line')
-
-		if (!lineElm || !selection)
-			return
-
-		const range = document.createRange()
-
-		range.selectNodeContents(lineElm)
-		selection.removeAllRanges()
-		selection.addRange(range)
+			this.setSelection({ start: line.from, end: line.from + line.text.length })
+		}
 	}
 
 	private handleClick(event: Event): void {
@@ -852,6 +849,7 @@ export class Editor {
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
+		this.root.removeEventListener('touchstart', this.handlers.touchstart)
 		this.root.removeEventListener('mousedown', this.handlers.mousedown)
 		this.root.removeEventListener('click', this.handlers.click)
 		this.root.removeEventListener('focus', this.handlers.selection)

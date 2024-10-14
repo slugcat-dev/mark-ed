@@ -151,7 +151,7 @@ a {
 		font-family: 'Ubuntu Mono', monospace;
 	}
 
-	/* Clickable checkbox widget */
+	/* Align checkboxes correctly */
 	.md-checkbox {
 		display: inline-flex;
 		position: relative;
@@ -162,11 +162,12 @@ a {
 			width: .875rem;
 			height: .875rem;
 			margin: 0;
+			cursor: pointer;
 		}
 	}
 
 	/* Hide checkboxes when the checkmark is visible */
-	.md-task:has(.md-mark:not(.md-hidden)) .md-checkbox {
+	&:has(.md-mark:not(.md-hidden)) .md-checkbox {
 		display: none;
 	}
 }
