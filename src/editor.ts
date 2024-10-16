@@ -1,7 +1,7 @@
 import { MarkdownParser, type MarkdownParserConfig } from './markdown'
 import { defaultKeymap, compileKeymap, type Keymap, type CompiledKeybind } from './keymap'
 import { defaultBlockHideRules, defaultInlineGrammar, defaultLineGrammar } from './grammar'
-import { defu, isAndroid, isChrome, isFirefox } from './utils'
+import { defu, isFirefox } from './utils'
 
 export interface EditorConfig {
 	content: string
@@ -30,6 +30,8 @@ export interface Line {
 
 interface EditorState {
 	focused: boolean
+	composing: boolean
+	compositionTime: number
 	selection: EditorSelection & { direction: 'forward' | 'backward' | 'none' }
 	timestamp: number
 }
@@ -61,6 +63,8 @@ export class Editor {
 	private handlers = {
 		beforeinput: this.handleBeforeInput.bind(this),
 		input: this.handleInput.bind(this),
+		compositionstart: this.handleCompositionstart.bind(this),
+		compositionend: this.handleCompositionend.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
 		mousedown: this.handleMousedown.bind(this),
@@ -69,6 +73,8 @@ export class Editor {
 	}
 	private state: EditorState = {
 		focused: false,
+		composing: false,
+		compositionTime: 0,
 		selection: {
 			start: 0,
 			end: 0,
@@ -178,7 +184,8 @@ export class Editor {
 		// Add event listeners
 		this.root.addEventListener('beforeinput', this.handlers.beforeinput)
 		this.root.addEventListener('input', this.handlers.input)
-		this.root.addEventListener('compositionend', this.handlers.input)
+		this.root.addEventListener('compositionstart', this.handlers.compositionstart)
+		this.root.addEventListener('compositionend', this.handlers.compositionend)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
 		this.root.addEventListener('mousedown', this.handlers.mousedown)
@@ -203,23 +210,41 @@ export class Editor {
 
 			return
 		}
-
-		// Possible fix for backspace on Android
-		if (isAndroid && isChrome && event.inputType === 'deleteContentBackward')
-			return
 	}
 
-	private handleInput(event: Event): void {
+	private handleInput(): void {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
-		if (event instanceof InputEvent && event.isComposing)
+		if (this.state.composing)
 			return
 
 		this.updateLines()
 		this.updateDOM()
 	}
 
+	private handleCompositionstart() {
+		this.state.composing = true
+
+		// WebKit destroys line elements after composition for some reason if they have `position: relative`
+		const line = this.lineAt(this.selection.start)
+		const lineElm = this.root.children[line.num] as HTMLDivElement
+
+		lineElm.style.position = 'initial'
+	}
+
+	private handleCompositionend() {
+		this.state.composing = false
+		this.state.compositionTime = Date.now()
+
+		this.handleInput()
+	}
+
 	private handleKey(event: KeyboardEvent): void {
+		// Safari fires the compositionend event and keydown event for confirming the composition in the wrong order,
+		// so any keydown event directly after composition is ignored
+		if (this.state.composing || Date.now() - this.state.compositionTime <= 100)
+			return
+
 		for (const keybind of this.keymap) {
 			if (
 				event.key.toLowerCase() !== keybind.key
@@ -264,6 +289,12 @@ export class Editor {
 		this.toggleCheckbox(event)
 	}
 
+	private handleSelection(event: Event) {
+		// Prevent updating twice when a selectionchange event follows setSelection
+		if (event instanceof FocusEvent || Date.now() - this.state.timestamp > 10)
+			this.updateState()
+	}
+
 	/**
 	 * Toggle TaskList checkboxes
 	 */
@@ -278,7 +309,7 @@ export class Editor {
 
 		const checkboxPos = this.getNodeOffset(event.target as Element)
 		const line = this.lineAt(checkboxPos)
-		const pos = checkboxPos - line.from - 2
+		const pos = checkboxPos - line.from + 3
 		const text = line.text
 
 		this.lines[line.num] = text.substring(0, pos)
@@ -293,20 +324,19 @@ export class Editor {
 		return true
 	}
 
-	private handleSelection(event: Event) {
-		// Prevent updating twice when a selectionchange event follows setSelection
-		if (event instanceof FocusEvent || Date.now() - this.state.timestamp > 10)
-			this.updateState()
-	}
-
 	/**
 	 * Read back the content from the DOM
 	 */
 	private updateLines(): void {
 		// Remove elements that aren't editor lines
 		for (const node of this.root.childNodes) {
-			if (node instanceof HTMLDivElement && node.classList.contains('md-line'))
+			if (node instanceof HTMLDivElement && node.classList.contains('md-line')) {
+				// Clean up from composition
+				if (node.style.position === 'initial')
+					node.style.removeProperty('position')
+
 				continue
+			}
 
 			node.remove()
 		}
@@ -852,7 +882,8 @@ export class Editor {
 	destroy(): void {
 		this.root.removeEventListener('beforeinput', this.handlers.beforeinput)
 		this.root.removeEventListener('input', this.handlers.input)
-		this.root.removeEventListener('compositionend', this.handlers.input)
+		this.root.removeEventListener('compositionstart', this.handlers.compositionstart)
+		this.root.removeEventListener('compositionend', this.handlers.compositionend)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
 		this.root.removeEventListener('mousedown', this.handlers.mousedown)

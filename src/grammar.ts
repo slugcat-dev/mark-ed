@@ -49,7 +49,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const level = mark.length - 1
 			const end = match[4].length ? `<span class="md-mark">${match[4]}</span>` : ''
 
-			return `${match[1]}<h${level} class="md-heading" style="display: inline-block"><span class="md-mark">${mark}</span>${parser.parseInline(match[3])}${end}</h${level}>`
+			return `${match[1]}<h${level} class="md-heading" style="display: inline"><span class="md-mark">${mark}</span>${parser.parseInline(match[3])}${end}</h${level}>`
 		}
 	},
 	CodeBlock: {
@@ -63,7 +63,7 @@ export const defaultLineGrammar: LineGrammar = {
 
 			return {
 				match,
-				replacement: `<code class="md-code-block">${match[1]}<span class="md-mark">${match[2]}${match[3]}${lang}${escapeHTML(match[5])}</span></code>`
+				replacement: `<code class="md-code-block md-open">${match[1]}<span class="md-mark">${match[2]}${match[3]}${lang}${escapeHTML(match[5])}</span></code>`
 			}
 		},
 		line: line => `<code class="md-code-block">${fixLine(line)}</code>`,
@@ -74,7 +74,7 @@ export const defaultLineGrammar: LineGrammar = {
 			if (!match)
 				return false
 
-			return `<code class="md-code-block">${match[1]}<span class="md-mark">${match[2]}</span>${match[3]}</code>`
+			return `<code class="md-code-block md-close">${match[1]}<span class="md-mark">${match[2]}</span>${match[3]}</code>`
 		}
 	},
 	BlockQuote: {
@@ -87,7 +87,7 @@ export const defaultLineGrammar: LineGrammar = {
 			const mark = match[2]
 			const checkbox = `<span class="md-checkbox" contenteditable="false"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
 
-			return `${match[1]}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${parser.parseInline(match[3])}`
+			return `${match[1]}<span class="md-task">${checkbox}<span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span></span> ${parser.parseInline(match[3])}`
 		}
 	},
 	UnorderedList: {
