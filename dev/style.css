@@ -57,12 +57,9 @@ a {
 	color: color-mix(in srgb, currentcolor, transparent 50%);
 }
 
-/* Hide marks, don't use `display: none`, it causes unexpected behaviour */
 .md-hidden {
-	display: inline-block;
-	width: 0;
-	height: 0;
-	overflow: hidden;
+	font-size: 0;
+	line-height: 0;
 }
 
 /* Show an actual line for thematic breaks */
@@ -106,7 +103,8 @@ a {
 
 	/* Don't hide code block marks */
 	.md-hidden {
-		display: initial;
+		font-size: inherit;
+		line-height: inherit;
 	}
 }
 
@@ -130,7 +128,8 @@ a {
 	display: inline-block;
 
 	& > .md-mark.md-hidden {
-		display: initial;
+		font-size: inherit;
+		line-height: inherit;
 		color: transparent;
 
 		&::before {

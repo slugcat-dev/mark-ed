@@ -85,7 +85,7 @@ export const defaultLineGrammar: LineGrammar = {
 		regex: /^([\t ]*)([-+*] \[[x ]\] )(.*)/i,
 		replace: (match, parser) => {
 			const mark = match[2]
-			const checkbox = `<span class="md-checkbox"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
+			const checkbox = `<span class="md-checkbox" contenteditable="false"><input type="checkbox" tabindex="-1" aria-hidden="true" ${/\[ \]/.test(mark) ? '' : 'checked'}></span>`
 
 			return `${match[1]}<span class="md-task"><span class="md-mark">${mark[0]} [<span class="md-checkmark">${mark[3]}</span>]</span>${checkbox}</span> ${parser.parseInline(match[3])}`
 		}

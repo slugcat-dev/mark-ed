@@ -63,7 +63,6 @@ export class Editor {
 		input: this.handleInput.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
-		touchstart: this.handleTouchstart.bind(this),
 		mousedown: this.handleMousedown.bind(this),
 		click: this.handleClick.bind(this),
 		selection: this.handleSelection.bind(this)
@@ -182,7 +181,6 @@ export class Editor {
 		this.root.addEventListener('compositionend', this.handlers.input)
 		this.root.addEventListener('keydown', this.handlers.key)
 		this.root.addEventListener('paste', this.handlers.paste)
-		this.root.addEventListener('touchstart', this.handlers.touchstart)
 		this.root.addEventListener('mousedown', this.handlers.mousedown)
 		this.root.addEventListener('click', this.handlers.click)
 		document.addEventListener('selectionchange', this.handlers.selection)
@@ -246,10 +244,6 @@ export class Editor {
 		const text = event.clipboardData.getData('text/plain')
 
 		this.insertAtSelection(text)
-	}
-
-	private handleTouchstart(event: TouchEvent) {
-		this.toggleCheckbox(event)
 	}
 
 	private handleMousedown(event: MouseEvent): void {
@@ -861,7 +855,6 @@ export class Editor {
 		this.root.removeEventListener('compositionend', this.handlers.input)
 		this.root.removeEventListener('keydown', this.handlers.key)
 		this.root.removeEventListener('paste', this.handlers.paste)
-		this.root.removeEventListener('touchstart', this.handlers.touchstart)
 		this.root.removeEventListener('mousedown', this.handlers.mousedown)
 		this.root.removeEventListener('click', this.handlers.click)
 		this.root.removeEventListener('focus', this.handlers.selection)
