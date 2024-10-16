@@ -310,9 +310,11 @@ export class Editor {
 	 */
 	private updateLines(): void {
 		// Remove elements that aren't editor lines
-		for (const lineElm of this.root.children) {
-			if (!lineElm.classList.contains('md-line'))
-				lineElm.remove()
+		for (const node of this.root.childNodes) {
+			if (node instanceof HTMLDivElement && node.classList.contains('md-line'))
+				continue
+
+			node.remove()
 		}
 
 		if (!this.root.firstChild)
@@ -457,8 +459,9 @@ export class Editor {
 		if (!this.config.hideMarks)
 			return this.root.querySelectorAll('.md-hidden').forEach(mark => mark.classList.remove('md-hidden'))
 
-		let blockMarks = []
+		let blockMarks: Element[] = []
 		let blockVisible = false
+		let blockType = ''
 
 		// Returns if a node is contained within in the currect selection
 		const isVisible = (node: Node) => {
@@ -484,7 +487,18 @@ export class Editor {
 
 			// Accumulate all block marks, eg. all blockquote marks in a multiline blockquote
 			const inBlock = lineType in this.config.blockHideRules
-			const endBlock = !inBlock || lineElm === this.root.lastChild
+
+			// Toggle the visibility of all block marks
+			function endBlock() {
+				blockMarks.forEach(mark => mark.classList.toggle('md-hidden', !blockVisible))
+
+				blockMarks = []
+				blockVisible = false
+			}
+
+			// Block type changed
+			if (lineType !== blockType)
+				endBlock()
 
 			if (inBlock) {
 				blockMarks.push(...lineElm.querySelectorAll(this.config.blockHideRules[lineType]))
@@ -493,13 +507,11 @@ export class Editor {
 					blockVisible = true
 			}
 
-			// Toggle the visibility of all block marks
-			if (endBlock && blockMarks.length) {
-				blockMarks.forEach(mark => mark.classList.toggle('md-hidden', !blockVisible))
+			// End of block
+			if (!inBlock || lineElm === this.root.lastChild)
+				endBlock()
 
-				blockMarks = []
-				blockVisible = false
-			}
+			blockType = lineType
 		}
 	}
 
