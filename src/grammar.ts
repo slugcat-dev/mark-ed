@@ -40,7 +40,7 @@ export interface InlineGrammar {
 export const defaultLineGrammar: LineGrammar = {
 	ThematicBreak: {
 		regex: /^(\s*)((?:(?:\*\s*){3,})|(?:(?:-\s*){3,})|(?:(?:_\s*){3,}))(\s*)$/,
-		replace: match => `${match[1]}<span class="md-hr"><span class="md-mark">${match[2]}</span></span>${match[3]}`
+		replace: match => `<span class="md-hr">${match[1]}<span class="md-mark">${match[2]}</span>${match[3]}</span>`
 	},
 	ATXHeading: {
 		regex: /^([\t ]*)(#{1,6} )(.*?)((?:\s+#+\s*)?)$/,
@@ -79,7 +79,7 @@ export const defaultLineGrammar: LineGrammar = {
 	},
 	BlockQuote: {
 		regex: /^([\t ]*)(> ?)(.*)/,
-		replace: (match, parser) => `${match[1]}<span class="md-quote"><span class="md-mark">${escapeHTML(match[2])}</span>${parser.parseInline(match[3])}</span>`
+		replace: (match, parser) => `<span class="md-quote">${match[1]}<span class="md-mark">${escapeHTML(match[2])}</span>${parser.parseInline(match[3])}</span>`
 	},
 	TaskList: {
 		regex: /^([\t ]*)([-+*] \[[x ]\] )(.*)/i,
