@@ -1,11 +1,5 @@
 name: Build & Publish
-on:
-  push:
-    paths:
-      - 'package.json'
-  pull_request:
-    paths:
-      - 'package.json'
+on: workflow_dispatch
 
 jobs:
   build:
