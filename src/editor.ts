@@ -208,6 +208,9 @@ export class Editor {
 		} else if (event.inputType.startsWith('history')) {
 			event.preventDefault()
 
+			if (this.state.composing)
+				return
+
 			if (event.inputType === 'historyUndo')
 				this.undo()
 			else if (event.inputType === 'historyRedo')
@@ -219,20 +222,28 @@ export class Editor {
 		// For composition input, only update the text after a `compositionend` event
 		// Updating the DOM before that will cancel the composition
 		if (this.state.composing)
-			return
-
-		this.updateLines()
-		this.updateDOM()
+			this.updateState()
+		else {
+			this.updateLines()
+			this.updateDOM()
+		}
 	}
 
 	private handleCompositionStart() {
-		if (this.selection.start !== this.selection.end)
-			this.insertAtSelection('')
-
 		this.state.composing = true
 
+		// Fixes some very specific bugs, just trust me with this one
+		const selection = this.selection
+		const content = this.content.slice(0, selection.start)
+			+ '42'
+			+ this.content.slice(selection.end)
+
+		this.lines = content.split('\n')
+
+		this.updateDOM({ start: selection.start, end: selection.start + 2 })
+
 		// WebKit destroys line elements after composition for some reason if they have `position: relative`
-		const line = this.lineAt(this.selection.start)
+		const line = this.lineAt(selection.start)
 		const lineElm = this.root.children[line.num] as HTMLDivElement
 
 		lineElm.style.position = 'initial'
@@ -309,8 +320,8 @@ export class Editor {
 		for (const node of this.root.childNodes) {
 			if (node instanceof HTMLDivElement && node.classList.contains('md-line')) {
 				// Clean up from composition
-				if (node.style.position === 'initial')
-					node.style.removeProperty('position')
+				if (node.hasAttribute('style'))
+					node.removeAttribute('style')
 
 				continue
 			}
@@ -374,7 +385,7 @@ export class Editor {
 		this.hideMarks(selection)
 
 		// Update the selection of current state in the undo stack
-		if (this.undoStack[this.undoStack.length - 1]) {
+		if (this.undoStack[this.undoStack.length - 1] && !this.state.composing) {
 			this.undoStack[this.undoStack.length - 1].selection = {
 				start: selection.start,
 				end: selection.end,
@@ -396,7 +407,7 @@ export class Editor {
 	 *
 	 * @param overwriteSelection - If specified, the selection will be set to this value instead of where it was before.
 	 */
-	updateDOM(overwriteSelection?: EditorSelection & { direction?: 'forward' | 'backward' | 'none' }, pushUndo = true): void {
+	updateDOM(overwriteSelection?: EditorSelection & { direction?: 'forward' | 'backward' | 'none' }, pushUndo = !this.state.composing): void {
 		const before = Array.from(this.root.children).map((lineElm) => {
 			const elm = lineElm.cloneNode(true) as HTMLElement
 
