@@ -63,11 +63,11 @@ export class Editor {
 	private handlers = {
 		beforeinput: this.handleBeforeInput.bind(this),
 		input: this.handleInput.bind(this),
-		compositionstart: this.handleCompositionstart.bind(this),
-		compositionend: this.handleCompositionend.bind(this),
+		compositionstart: this.handleCompositionStart.bind(this),
+		compositionend: this.handleCompositionEnd.bind(this),
 		key: this.handleKey.bind(this),
 		paste: this.handlePaste.bind(this),
-		mousedown: this.handleMousedown.bind(this),
+		mousedown: this.handleMouseDown.bind(this),
 		click: this.handleClick.bind(this),
 		selection: this.handleSelection.bind(this)
 	}
@@ -200,15 +200,18 @@ export class Editor {
 	}
 
 	private handleBeforeInput(event: InputEvent): void {
-		if (event.inputType.startsWith('history')) {
+		if (event.inputType === 'deleteContentForward' || event.inputType === 'insertText') {
+			if (this.selection.start !== this.selection.end) {
+				event.preventDefault()
+				this.insertAtSelection(event.data ?? '')
+			}
+		} else if (event.inputType.startsWith('history')) {
 			event.preventDefault()
 
 			if (event.inputType === 'historyUndo')
 				this.undo()
 			else if (event.inputType === 'historyRedo')
 				this.redo()
-
-			return
 		}
 	}
 
@@ -222,7 +225,10 @@ export class Editor {
 		this.updateDOM()
 	}
 
-	private handleCompositionstart() {
+	private handleCompositionStart() {
+		if (this.selection.start !== this.selection.end)
+			this.insertAtSelection('')
+
 		this.state.composing = true
 
 		// WebKit destroys line elements after composition for some reason if they have `position: relative`
@@ -232,7 +238,7 @@ export class Editor {
 		lineElm.style.position = 'initial'
 	}
 
-	private handleCompositionend() {
+	private handleCompositionEnd() {
 		this.state.composing = false
 		this.state.compositionTime = Date.now()
 
@@ -271,7 +277,7 @@ export class Editor {
 		this.insertAtSelection(text)
 	}
 
-	private handleMousedown(event: MouseEvent): void {
+	private handleMouseDown(event: MouseEvent): void {
 		if (this.toggleCheckbox(event, false))
 			return
 
@@ -293,6 +299,33 @@ export class Editor {
 		// Prevent updating twice when a selectionchange event follows setSelection
 		if (event instanceof FocusEvent || Date.now() - this.state.timestamp > 10)
 			this.updateState()
+	}
+
+	/**
+	 * Read back the content from the DOM
+	 */
+	private updateLines(): void {
+		// Remove elements that aren't editor lines
+		for (const node of this.root.childNodes) {
+			if (node instanceof HTMLDivElement && node.classList.contains('md-line')) {
+				// Clean up from composition
+				if (node.style.position === 'initial')
+					node.style.removeProperty('position')
+
+				continue
+			}
+
+			node.remove()
+		}
+
+		if (!this.root.firstChild)
+			this.root.innerHTML = '<div class="md-line"><br></div>'
+
+		this.lines = []
+
+		// Using this.root.textContent directly doesn't include line breaks
+		for (const lineElm of this.root.children)
+			this.lines.push(lineElm.textContent ?? '')
 	}
 
 	/**
@@ -324,39 +357,13 @@ export class Editor {
 		return true
 	}
 
-	/**
-	 * Read back the content from the DOM
-	 */
-	private updateLines(): void {
-		// Remove elements that aren't editor lines
-		for (const node of this.root.childNodes) {
-			if (node instanceof HTMLDivElement && node.classList.contains('md-line')) {
-				// Clean up from composition
-				if (node.style.position === 'initial')
-					node.style.removeProperty('position')
-
-				continue
-			}
-
-			node.remove()
-		}
-
-		if (!this.root.firstChild)
-			this.root.innerHTML = '<div class="md-line"><br></div>'
-
-		this.lines = []
-
-		// Using this.root.textContent directly doesn't include line breaks
-		for (const lineElm of this.root.children)
-			this.lines.push(lineElm.textContent ?? '')
-	}
-
 	private updateState(selection = this.getSelection(), force = false): void {
 		this.state.timestamp = Date.now()
 
 		// Only update if the state changed
 		if (
 			!force
+			&& !this.state.composing
 			&& this.state.focused === this.focused
 			&& this.state.selection.start === selection.start
 			&& this.state.selection.end === selection.end

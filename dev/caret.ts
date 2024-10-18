@@ -3,7 +3,11 @@ import { isAndroid, isIOS } from '../src/utils'
 
 const editor = new Editor('editor', {
 	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
-	hideMarks: true
+	hideMarks: true,
+	keymap: {
+		// Firefox sets the selection beyond the range where the caret can be rendered
+		'CtrlMeta A': editor => editor.setSelection({ start: 0, end: editor.content.length })
+	}
 })
 
 // Custom smooth animated caret
@@ -29,12 +33,18 @@ if (!isAndroid && !isIOS) {
 			const editorRect = editor.root.getBoundingClientRect()
 
 			// Fix for empty lines
-			if (focusNode instanceof HTMLDivElement && focusNode.firstChild instanceof HTMLBRElement) {
-				const lineRect = focusNode.getBoundingClientRect()
-				const fontSize = parseFloat(getComputedStyle(focusNode).fontSize)
+			if (focusNode instanceof HTMLElement) {
+				let innermostChild = focusNode
+
+				while (innermostChild.firstChild instanceof HTMLElement)
+					innermostChild = innermostChild.firstChild
+
+				const lineRect = innermostChild.getBoundingClientRect()
+				const computedStyle = getComputedStyle(innermostChild)
+				const fontSize = parseFloat(computedStyle.fontSize)
 				const caretHeight = lineRect.height - fontSize * 1.125
 
-				caretRect.x = lineRect.x
+				caretRect.x = lineRect.x + parseFloat(computedStyle.paddingInlineStart)
 				caretRect.y = lineRect.y + caretHeight / 2
 				caretRect.height = lineRect.height - caretHeight
 			}
