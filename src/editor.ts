@@ -86,9 +86,6 @@ export class Editor {
 	private redoStack: HistoryState[] = []
 	readonly root: HTMLElement
 	readonly config: EditorConfig
-	/**
-	 * The `MarkdownParser` instance the editor uses.
-	 */
 	readonly markdown: MarkdownParser
 
 	/**
@@ -116,9 +113,6 @@ export class Editor {
 		}
 	}
 
-	/**
-	 * Get if the editor is currently focused.
-	 */
 	get focused(): boolean {
 		return this.root === document.activeElement
 	}
@@ -291,15 +285,6 @@ export class Editor {
 	private handleMouseDown(event: MouseEvent): void {
 		if (this.toggleCheckbox(event, false))
 			return
-
-		// Workaround for a bug in Firefox where inline elements prevent line selection on tripleclick
-		if (event.detail % 3 === 0) {
-			event.preventDefault()
-
-			const line = this.lineAt(this.selection.start)
-
-			this.setSelection({ start: line.from, end: line.from + line.text.length })
-		}
 	}
 
 	private handleClick(event: Event): void {
@@ -313,7 +298,7 @@ export class Editor {
 	}
 
 	/**
-	 * Read back the content from the DOM
+	 * Read back the content from the DOM.
 	 */
 	private updateLines(): void {
 		// Remove elements that aren't editor lines
@@ -340,7 +325,7 @@ export class Editor {
 	}
 
 	/**
-	 * Toggle TaskList checkboxes
+	 * Toggle TaskList checkboxes.
 	 */
 	private toggleCheckbox(event: Event, act = true): boolean {
 		if (!(event.target instanceof HTMLInputElement && event.target.matches('.md-task input[type="checkbox"]')))
@@ -640,6 +625,8 @@ export class Editor {
 	/**
 	 * Convert the indentation of the lines in a text to spaces or tabs,
 	 * depending on how the editor is configured.
+	 *
+	 * @returns The converted text.
 	 */
 	convertIndentation(text: string): string {
 		if (!this.config.convertIndentation)
@@ -744,13 +731,13 @@ export class Editor {
 	 * @param collapse - If true, collapses the selection to the specified `start` or `end` position,
 	 * otherwise extends the selection.
 	 */
-	setSelection(selection: Omit<EditorSelection, 'start'> | Omit<EditorSelection, 'end'>, collapse?: boolean): void
+	setSelection(selection: { start: number } | { end: number }, collapse?: boolean): void
 
 	setSelection(
 		selection: number
 			| EditorSelection & { direction?: 'forward' | 'backward' | 'none' }
-			| Omit<EditorSelection, 'start'>
-			| Omit<EditorSelection, 'end'>,
+			| { start: number }
+			| { end: number },
 		collapse = true
 	): void {
 		const documentSelection = document.getSelection()
@@ -816,8 +803,8 @@ export class Editor {
 		let currentLength = 0
 		let startOffset = 0
 		let endOffset = 0
-		let startNode
-		let endNode
+		let startNode: Node | undefined
+		let endNode: Node | undefined
 
 		for (const lineElm of this.root.children) {
 			const isEmptyLine = lineElm.firstChild instanceof HTMLBRElement
@@ -880,6 +867,15 @@ export class Editor {
 		return offset - 1
 	}
 
+	/**
+	 * Add an event listener to the editor.
+	 *
+	 * A `change` event is emitted when the content of the editor changes,
+	 * by user input or programmatically.
+	 *
+	 * A `selectionchange` event is emitted when the selection changes
+	 * and when the editor gets or loses focus.
+	 */
 	addEventListener(type: string, listener: () => any): void {
 		if (!this.listeners[type])
 			this.listeners[type] = []
@@ -895,7 +891,7 @@ export class Editor {
 	}
 
 	/**
-	 * Unregister all event listeners and clean up the editor.
+	 * Unregister all event listeners on the editor element and make it no longer editable.
 	 */
 	destroy(): void {
 		this.root.removeEventListener('beforeinput', this.handlers.beforeinput)
@@ -918,7 +914,7 @@ export class Editor {
 	}
 
 	/**
-	 * Create an `EditorSelection` from a position.
+	 * Convert a number to an `EditorSelection`.
 	 */
 	static selectionFrom(pos: number): EditorSelection {
 		return { start: pos, end: pos }

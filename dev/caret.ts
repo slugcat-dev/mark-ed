@@ -1,13 +1,9 @@
 import { Editor } from '../src'
-import { isAndroid, isIOS } from '../src/utils'
+import { isAndroid, isFirefox, isIOS } from '../src/utils'
 
 const editor = new Editor('editor', {
 	content: '# Hello, World!\nThis is `mark-ed`, an in-browser editor that supports Markdown formatting.\n\n[**View on GitHub**](https://github.com/slugcat-dev/mark-ed)',
-	hideMarks: true,
-	keymap: {
-		// Firefox sets the selection beyond the range where the caret can be rendered
-		'CtrlMeta A': editor => editor.setSelection({ start: 0, end: editor.content.length })
-	}
+	hideMarks: true
 })
 
 // Custom smooth animated caret
@@ -19,9 +15,10 @@ if (!isAndroid && !isIOS) {
 
 	editor.addEventListener('selectionchange', () => {
 		const selection = document.getSelection()
+		let caretVisible = false
 
 		// Calculate the caret position
-		if (selection && selection.focusNode) {
+		if (editor.focused && selection && selection.focusNode) {
 			const range = document.createRange()
 			const focusNode = selection.focusNode
 
@@ -54,10 +51,14 @@ if (!isAndroid && !isIOS) {
 
 			caret.style.height = `${caretRect.height}px`
 			caret.style.translate = `${x}px ${y}px`
+
+			// Sry Firefox <3
+			if (!isFirefox || selection.isCollapsed)
+				caretVisible = true
 		}
 
 		// Hide the caret if the editor is not focused
-		caret.classList.toggle('visible', editor.focused)
+		caret.classList.toggle('visible', caretVisible)
 
 		// Restart the caret blink animation
 		if (caret.style.animationName === 'blink-1')
