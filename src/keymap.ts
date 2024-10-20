@@ -222,21 +222,27 @@ function selectLineStart(editor: Editor, collapse: boolean): void {
 	const forward = selection.direction === 'forward'
 	const line = editor.lineAt(forward ? selection.end : selection.start)
 	const lineType = editor.markdown.lineTypes[line.num]
-	let pos = line.from
+	let start = line.from
 
-	// Move the cursor to the start of a list item or block quote
-	if (/BlockQuote|List/.test(lineType) && collapse) {
-		const from = line.from + line.text.match(quoteListRegex)![0].length
+	// Stop before line indent
+	const lineIndentFrom = line.from + line.text.match(/^[\t ]*/)![0].length
 
-		if (selection.start > from)
-			pos = from
+	if (selection.start > lineIndentFrom)
+		start = lineIndentFrom
+
+	// Stop before list item or block quote marks
+	if (/BlockQuote|List/.test(lineType)) {
+		const textFrom = line.from + line.text.match(quoteListRegex)![0].length
+
+		if (selection.start > textFrom)
+			start = textFrom
 	}
 
 	if (forward) {
 		if (collapse || selection.start <= line.from)
-			editor.setSelection({ end: pos }, collapse)
+			editor.setSelection({ end: start }, collapse)
 		else
-			editor.setSelection({ start: pos, end: selection.start, direction: 'backward' })
+			editor.setSelection({ start, end: selection.start, direction: 'backward' })
 	} else
-		editor.setSelection({ start: pos }, collapse)
+		editor.setSelection({ start }, collapse)
 }
