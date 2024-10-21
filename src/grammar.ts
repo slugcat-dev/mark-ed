@@ -26,7 +26,7 @@ export interface BlockRule {
 export interface DelimiterRule {
 	delimiter: string
 	length: number
-	replace: (delimiter: string, text: string) => string
+	replace: (text: string, delimiter: string) => string
 }
 
 export interface LineGrammar {
@@ -194,27 +194,23 @@ export const defaultInlineGrammar: InlineGrammar = {
 	Emphasis: {
 		delimiter: '*_',
 		length: 1,
-		replace: inline('i')
+		replace: formatInline('i')
 	},
 	StrongEmphasis: {
 		delimiter: '*',
 		length: 2,
-		replace: inline('b')
+		replace: formatInline('b')
 	},
 	Underline: {
 		delimiter: '_',
 		length: 2,
-		replace: inline('u')
+		replace: formatInline('u')
 	},
 	Strikethrough: {
 		delimiter: '~',
 		length: 2,
-		replace: inline('s')
+		replace: formatInline('s')
 	}
-}
-
-function inline(tag: string): (delimiter: string, text: string) => string {
-	return (delimiter: string, text: string) => `<${tag}><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></${tag}>`
 }
 
 export const defaultBlockHideRules: Record<string, string> = {
@@ -225,4 +221,8 @@ export const defaultBlockHideRules: Record<string, string> = {
 export const disableRule: ReplaceRule = {
 	match: () => false,
 	replace: () => ''
+}
+
+export function formatInline(tag: string): (text: string, delimiter: string) => string {
+	return (text: string, delimiter: string) => `<${tag}><span class="md-mark">${delimiter}</span>${text}<span class="md-mark">${delimiter}</span></${tag}>`
 }

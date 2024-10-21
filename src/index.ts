@@ -10,6 +10,7 @@ export {
 	defaultInlineGrammar,
 	defaultLineGrammar,
 	disableRule,
+	formatInline,
 	type BlockRule,
 	type DelimiterRule,
 	type InlineGrammar,
