@@ -14,14 +14,8 @@ const editor = new Editor('editor', {
 	markdown: {
 		lineGrammar: {
 			Subtext: {
-				regex: /^(?<indent>[\t ]*)(?<mark>-# )(?<text>.*)$/,
-				replace(match, parser) {
-					const indent = match.groups!.indent
-					const mark = match.groups!.mark
-					const text = parser.parseInline(match.groups!.text)
-
-					return `${indent}<span class="md-subtext"><span class="md-mark">${mark}</span>${text}</span>`
-				}
+				regex: /^([\t ]*)(-# )(.*)$/,
+				replace: (match, parser) => `${match[1]}<span class="md-subtext"><span class="md-mark">${match[2]}</span>${parser.parseInline(match[3])}</span>`
 			}
 		}
 	}
