@@ -90,8 +90,12 @@ export class MarkdownParser {
 		// Precompute the delimiter regex
 		const delimiters = Object.values(this.inlineGrammar)
 			.reduce((delimiters, rule) => {
-				if ('delimiter' in rule && !delimiters.includes(rule.delimiter))
-					delimiters += rule.delimiter
+				if ('delimiter' in rule) {
+					for (const delimiter of  rule.delimiter) {
+						if (!delimiters.includes(delimiter))
+							delimiters += delimiter
+					}
+				}
 
 				return delimiters
 			}, '')
@@ -174,7 +178,7 @@ export class MarkdownParser {
 								.find(rule => rule.delimiter.includes(delimiter) && len >= rule.length && openLen >= rule.length)
 
 							if (rule) {
-								res = rule.replace(delimiter.repeat(rule.length), res)
+								res = rule.replace(res, delimiter.repeat(rule.length))
 								len -= rule.length
 								stack[stackPointer].len -= rule.length
 							} else {
