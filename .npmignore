@@ -1,7 +1,0 @@
-node_modules/
-dev/
-src/
-.github/
-eslint.config.js
-pnpm-lock.yaml
-vite.config.ts
