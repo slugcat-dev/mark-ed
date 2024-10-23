@@ -1,10 +1,7 @@
-const nav = typeof navigator !== 'undefined' ? navigator : { userAgent: '', vendor: '' }
-
-export const isChrome = /Chrome/i.test(nav.userAgent)
-export const isFirefox = /Firefox/i.test(nav.userAgent)
-export const isAndroid = /Android/i.test(nav.userAgent)
-export const isMac = /Apple/i.test(nav.vendor)
-export const isIOS = isMac && /Mobile/i.test(nav.userAgent)
+export const isFirefox = /Firefox/i.test(navigator.userAgent)
+export const isAndroid = /Android/i.test(navigator.userAgent)
+export const isMac = /Mac/i.test(navigator.platform)
+export const isIOS = isMac && 'ontouchstart' in window
 
 /**
  * Recursively merge default values into an object.
