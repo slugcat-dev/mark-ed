@@ -894,6 +894,16 @@ export class Editor {
 	 * Unregister all event listeners on the editor element and make it no longer editable.
 	 */
 	destroy(): void {
+		// Clear selection
+		const selection = document.getSelection()
+
+		if (selection)
+			selection.removeAllRanges()
+
+		this.root.blur()
+		this.updateState()
+
+		// Remove event listeners
 		this.root.removeEventListener('beforeinput', this.handlers.beforeinput)
 		this.root.removeEventListener('input', this.handlers.input)
 		this.root.removeEventListener('compositionstart', this.handlers.compositionstart)
