@@ -112,7 +112,7 @@ export const defaultInlineGrammar: InlineGrammar = {
 			const link = escapeHTML(match[1])
 			const href = (match[2] === '@' ? 'mailto:' : '') + link.replaceAll('"', '&quot;')
 
-			return `<span class="md-autolink"><span class="md-mark">&lt;</span><a href="${href}">${link}</a><span class="md-mark">&gt;</span></span>`
+			return `<span class="md-autolink"><span class="md-mark">&lt;</span><a href="${href}" target="_blank">${link}</a><span class="md-mark">&gt;</span></span>`
 		}
 	},
 	InlineCode: {
@@ -184,12 +184,12 @@ export const defaultInlineGrammar: InlineGrammar = {
 
 			return [urlStart + urlEnd.substring(0, end)]
 		},
-		replace: (match: Match) => `<a href="${escapeHTML(match[0])}">${escapeHTML(match[0])}</a>`
+		replace: (match: Match) => `<a href="${escapeHTML(match[0])}" target="_blank">${escapeHTML(match[0])}</a>`
 	},
 	Email: {
 		// Parse literal E-Mail adresses
 		regex: /^[a-z\d](?:[\w!#$%&'*+\-./=?^`{|}~]*[a-z\d])?@[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?)+/i,
-		replace: (match: Match) => `<a href="mailto:${escapeHTML(match[0])}">${escapeHTML(match[0])}</a>`
+		replace: (match: Match) => `<a href="mailto:${escapeHTML(match[0])}" target="_blank">${escapeHTML(match[0])}</a>`
 	},
 	Emphasis: {
 		delimiter: '*_',

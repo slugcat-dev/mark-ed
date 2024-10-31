@@ -336,7 +336,7 @@ export class Editor {
 		if (!act)
 			return true
 
-		const checkboxPos = this.getNodeOffset(event.target as Element)
+		const checkboxPos = this.getNodeOffset(event.target)
 		const line = this.lineAt(checkboxPos)
 		const pos = checkboxPos - line.from + 3
 		const text = line.text
