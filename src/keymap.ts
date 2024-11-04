@@ -181,7 +181,7 @@ function outdent(editor: Editor): void {
 			if (lineNum === startLine.num && selection.start > startLine.from)
 				selection.start -= selectionOffset
 
-			if (lineNum !== endLine.num || selectionEnd - endLine.from >= lineIndent.length)
+			if (lineNum !== endLine.num || selectionEnd > endLine.from + newIndent.length || (startLine.num === endLine.num && selectionEnd !== endLine.from))
 				selection.end -= selectionOffset
 		}
 	}
