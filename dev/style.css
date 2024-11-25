@@ -54,7 +54,7 @@ a {
 }
 
 .md-mark {
-	color: color-mix(in srgb, currentcolor, transparent 50%);
+	color: color-mix(in srgb, currentColor, transparent 50%);
 }
 
 .md-hidden {

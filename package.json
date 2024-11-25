@@ -18,21 +18,21 @@
     "LICENSE",
     "README.md"
   ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build:dev": "vite build",
-    "build": "tsc"
+    "build": "rm -rf dist && tsc"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^2.10.0",
-    "@types/node": "^22.8.6",
-    "@typescript-eslint/eslint-plugin": "^8.12.2",
-    "@typescript-eslint/parser": "^8.12.2",
-    "eslint": "^9.13.0",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10"
+    "@stylistic/eslint-plugin": "^2.11.0",
+    "@types/node": "^22.9.3",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
+    "eslint": "^9.15.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
   },
   "license": "MIT"
 }
